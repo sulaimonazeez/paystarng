@@ -1,0 +1,16 @@
+.skyblue {
+  background-color: #016064 !important;
+}
+.mysky {
+  color: #016064 !important;
+}
+.even:nth-child(even) {
+  background-color: #212529;
+}
+
+.cursor {
+  cursor: pointer;
+}
+.cursor:hover {
+  opacity: 0.8;
+}

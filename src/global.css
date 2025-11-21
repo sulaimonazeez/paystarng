@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@keyframes scaleIn {
+  0% { transform: scale(0.7); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(6px); }
+}
+
+.animate-scaleIn { animation: scaleIn .25s ease-out; }
+.animate-shake { animation: shake .4s ease; }
+.animate-fadeIn { animation: fadeIn .3s ease-out; }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
