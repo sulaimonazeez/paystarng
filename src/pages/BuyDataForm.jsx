@@ -87,7 +87,7 @@ const BuyDataForm = () => {
   }
   try { 
     const response = await axiosInstance.post("/api/data/purchase", datas);
-    if (response.status === 200 || response.status === 201) {
+    if (response.status === 200 || response.status === 201 response.status === 202) {
       setSuccess(true);
     } else {
       setLoading(false);
