@@ -7,13 +7,16 @@ import Testimonials from "../components/Testimonials";
 import Footer from "../components/Footer";
 import { motion, useInView } from "framer-motion";
 import SEOHead from "../components/ui/seo.jsx";
+import { useNavigate } from "react-router-dom";
 
 export default function LandingPage() {
   const featuresRef = useRef(null);
+  const navigate = useNavigate();
   const isInView = useInView(featuresRef, { once: true, margin: "-100px" });
 
   const handleCTAClick = () => {
     featuresRef.current?.scrollIntoView({ behavior: "smooth" });
+    navigate("/login");
   };
 
   return (

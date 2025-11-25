@@ -6,8 +6,12 @@ import PinModal from "../components/ui/pinModal.jsx";
 import axiosInstance from "../api/utilities.jsx";
 import NameModal from "../components/ui/modal.jsx";
 import SEOHead from "../components/ui/seo.jsx";
+import TransactionModal from "../components/ui/transactionResponse.jsx";
+
 
 const Cable = () => {
+  const [transaction, setTransaction] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
   const [pinOpen, setPinOpen] = useState(false);
   const [cable, setCable] = useState(""); 
   const [cardNumber, setCardNumber] = useState("");
@@ -85,11 +89,20 @@ const Cable = () => {
 
     try {
       const response = await axiosInstance.post("/api/cable/subscribe", payload);
+      setTransaction({
+      status: response.status, // <-- your server returns this
+      message: response.data.message || "No message",
+    });
+    setModalOpen(true);
       if (response.status === 200) {
         setSuccess(true);
       }
     } catch (err) {
-      alert(err.message);
+      setTransaction({
+      status: err.response?.status || 500,
+      message: err.response?.data?.message || err.message,
+  });
+    setModalOpen(true)
     } finally {
       setLoading(false);
       setTimeout(() => setSuccess(false), 2500);
@@ -202,18 +215,11 @@ const Cable = () => {
           </button>
         </div>
       </div>
-
-      {success && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white/90 rounded-xl p-8 text-center">
-            <div className="text-5xl mb-3">✅</div>
-            <h3 className="text-xl font-semibold text-orange-600">
-              Subscription Successful!
-            </h3>
-          </div>
-        </div>
-      )}
-
+      <TransactionModal
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          transaction={transaction}
+        />
       <PinModal
         open={pinOpen}
         onClose={() => setPinOpen(false)}

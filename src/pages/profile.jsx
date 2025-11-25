@@ -5,9 +5,11 @@ import BottomNav from "../components/ui/bottomNav.jsx";
 import axiosInstance from "../api/utilities.jsx";
 import { AuthContext } from "../context/authContext.jsx";
 import SEOHead from "../components/ui/seo.jsx";
+import { useNavigate } from "react-router-dom";
 const UserProfile = () => {
   const [data, setData] = useState();
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
   const { logout } = useContext(AuthContext);
   const fetchProfiles = async () =>{
     let response = await axiosInstance.get("/api/profile");
@@ -17,6 +19,9 @@ const UserProfile = () => {
     } else {
       alert("Something went wrong")
     }
+  }
+  const updatePin = () =>{
+    navigate("/pin/update");
   }
   
   useEffect(() =>{
@@ -104,10 +109,11 @@ const UserProfile = () => {
           <div className="mt-8 flex gap-4">
             <motion.button
               whileHover={{ scale: 1.05 }}
+              onClick={ updatePin }
               whileTap={{ scale: 0.95 }}
               className="flex-1 bg-orange-600 py-3 rounded-xl font-semibold hover:bg-orange-500 transition"
             >
-              Edit Profile
+              Update Pin
             </motion.button>
 
             <motion.button

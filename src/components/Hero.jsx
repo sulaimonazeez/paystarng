@@ -1,9 +1,8 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+
 
 export default function Hero({ onCTAClick }) {
-  const navigate = useNavigate()
   return (
     <section className="min-h-screen flex items-center justify-center relative z-10">
       <div className="container mx-auto px-6 lg:px-20">
@@ -28,7 +27,6 @@ export default function Hero({ onCTAClick }) {
                   onClick={onCTAClick}
                   whileHover={{ scale: 1.03, boxShadow: "0 12px 40px rgba(124,58,237,0.25)" }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={()=>navigate("/login")}
                   className="relative inline-flex items-center gap-3 bg-gradient-to-r from-[#7c3aed] via-[#06b6d4] to-[#7ee3f7] text-black font-extrabold px-6 py-3 rounded-2xl"
                 >
                   <span className="z-10">Get Started</span>

@@ -6,10 +6,13 @@ import BottomNav from "../components/ui/bottomNav.jsx";
 import axiosInstance from "../api/utilities.jsx";
 import PinModal from "../components/ui/pinModal.jsx";
 import SEOHead from "../components/ui/seo.jsx";
+import TransactionModal from "../components/ui/transactionResponse.jsx";
 
 
 const BuyDataForm = () => {
   const [pinOpen, setPinOpen] = useState(false);
+  const [transaction, setTransaction] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
   const [network, setNetwork] = useState("");
   const [dataType, setDataType] = useState("");
   const [dataPlan, setDataPlan] = useState(null); // was ""
@@ -87,40 +90,65 @@ const BuyDataForm = () => {
   }
   try { 
     const response = await axiosInstance.post("/api/data/purchase", datas);
-    if (response.status === 200 || response.status === 201) {
+    setTransaction({
+      status: response.status, // <-- your server returns this
+      message: response.data.message || "No message",
+    });
+    setModalOpen(true);
+    if (response.status === 200 || response.status === 201 || response.status === 202) {
       setSuccess(true);
     } else {
       setLoading(false);
     }
   } catch (err) {
-    alert(err.message);
+    setTransaction({
+    status: err.response?.status || 500,
+    message: err.response?.data?.message || err.message,
+  });
+    setModalOpen(true)
   } finally {
     setLoading(false);
   }
       setTimeout(() => setSuccess(false), 2500);
     };
     const verifyPinAndPurchase = async (enteredPin) => {
-      try {
-          const response = await axiosInstance.get("/api/verify/pin", {"pin":enteredPin});
-          if (response.status === 200 || response.status === 201) {
-            if (enteredPin !== response.data.pin) return false;
-              await handleBuyData();
-              return true;
-          } else {
-            alert("Incorrect Pin")
-          }
-      } catch (error) {
-        console.log(error.message);
-        alert(error.message);
-      }
-    };
-    const verifyName = () =>{
-      if (!network || !phoneNumber || !serviceID) {
-        alert("Please fill out the form");
-        return null;
-      }
-      setPinOpen(true)
+  try {
+    if (!enteredPin) {
+      alert("No PIN was entered");
+      return false;
     }
+
+    const response = await axiosInstance.get("/api/verify/pin", {
+      params: { pin: enteredPin }
+    });
+
+    if (response.status === 200 || response.status === 201) {
+      if (enteredPin !== response.data.pin) return false;
+
+      await handleBuyData();
+      return true;
+    } else {
+      alert("Incorrect PIN");
+      return false;
+    }
+
+  } catch (error) {
+    console.log(error.message);
+    alert(error.message);
+    return false;
+  }
+};
+    const verifyName = () => {
+  try {
+    if (!network || !phoneNumber || !serviceID) {
+      alert("Please fill out the form");
+      return;
+    }
+    setPinOpen(true);
+  } catch (error) {
+    alert(error.message);
+  }
+};
     
   if (fetching) {
     return (
@@ -255,19 +283,11 @@ const BuyDataForm = () => {
           </div>
         </div>
       </div>
-
-      {/* Success Popup */}
-      {success && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn">
-          <div className="bg-white/90 rounded-2xl p-8 text-center shadow-2xl animate-bounceIn">
-            <div className="text-5xl mb-3">✅</div>
-            <h3 className="text-xl font-semibold text-orange-600">
-              Transaction Successful!
-            </h3>
-            <p className="text-gray-600 mt-2">Your data purchase was completed</p>
-          </div>
-        </div>
-      )}
+      <TransactionModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        transaction={transaction}
+      />
       <PinModal
         open={pinOpen}
         onClose={() => setPinOpen(false)}

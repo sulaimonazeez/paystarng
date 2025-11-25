@@ -16,6 +16,7 @@ import PaystackForm from "../pages/paystackForm.jsx";
 import Cable from "../pages/cable.jsx";
 import GalaxyContactPage from "../pages/contact.jsx";
 import { HelmetProvider } from "react-helmet-async";
+import UpdatePinPage from "../pages/pinUpdate.jsx";
 const MyRoute = () => {
   return (
     <HelmetProvider>
@@ -36,7 +37,7 @@ const MyRoute = () => {
         <Route path="/account/generate" element={<PrivateRoute element={<AccountCard />} allowedRoles={["user","admin"]} />} />
         <Route path="/paystack" element={<PrivateRoute element={<PaystackForm />} allowedRoles={["user","admin"]} />} />
         <Route path="/cable" element={<PrivateRoute element={<Cable />} allowedRoles={["user","admin"]} />} />
-
+        <Route path="/pin/update" element={<PrivateRoute element={<UpdatePinPage />} allowedRoles={["user","admin"]} />} />
         {/* Admin-only routes */}
         <Route path="/admin" element={<PrivateRoute element={<Admin />} allowedRoles={["admin"]} />} />
         <Route path="/admin/:model" element={<PrivateRoute element={<ModelDetail />} allowedRoles={["admin"]} />} />

@@ -6,7 +6,12 @@ import BottomNav from "../components/ui/bottomNav.jsx";
 import PinModal from "../components/ui/pinModal.jsx";
 import SEOHead from "../components/ui/seo.jsx";
 import axiosInstance from "../api/utilities.jsx";
+import TransactionModal from "../components/ui/transactionResponse.jsx";
+
+
 const Airtime = () => {
+  const [transaction, setTransaction] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
   const [pinOpen, setPinOpen] = useState(false);
   const [network, setNetwork] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -36,13 +41,22 @@ const Airtime = () => {
   }
   try { 
     const response = await axiosInstance.post("/api/airtime/purchase", datas);
+    setTransaction({
+      status: response.status, // <-- your server returns this
+      message: response.data.message || "No message",
+    });
+    setModalOpen(true);
     if (response.status === 200) {
       setSuccess(true);
     } else {
       setLoading(false);
     }
   } catch (err) {
-    alert(err.message);
+    setTransaction({
+    status: err.response?.status || 500,
+    message: err.response?.data?.message || err.message,
+  });
+    setModalOpen(true)
   } finally {
     setLoading(false);
   }
@@ -161,19 +175,11 @@ const Airtime = () => {
           </div>
         </div>
       </div>
-
-      {/* Success Popup */}
-      {success && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn">
-          <div className="bg-white/90 rounded-2xl p-8 text-center shadow-2xl animate-bounceIn">
-            <div className="text-5xl mb-3">✅</div>
-            <h3 className="text-xl font-semibold text-orange-600">
-              Transaction Successful!
-            </h3>
-            <p className="text-gray-600 mt-2">Your data purchase was completed</p>
-          </div>
-        </div>
-      )}
+      <TransactionModal
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          transaction={transaction}
+        />
       <PinModal
         open={pinOpen}
         onClose={() => setPinOpen(false)}
