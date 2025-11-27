@@ -106,7 +106,7 @@ return ( <div className="min-h-screen flex items-center justify-center bg-[#0206
               )}
             </motion.button>
 
-            <div className="flex-1 text-sm text-white/60">Or email us at <a className="text-cyan-300 underline" href="mailto:hello@yourdomain.com">hello@yourdomain.com</a></div>
+            <div className="flex-1 text-sm text-white/60">Or email us at <a className="text-cyan-300 underline" href="mailto: olaniyisulaimon221@gmail.com">olaniyisulaimon221@gmail.com</a></div>
           </div>
         </form>
 
