@@ -169,7 +169,7 @@ const BuyDataForm = () => {
       <div className="absolute w-[25rem] h-[25rem] bg-gradient-to-r from-red-500 to-orange-500 rounded-full blur-[120px] bottom-[-10rem] right-[-10rem] opacity-40 animate-pulse"></div>
 
       {/* Card */}
-      <div className="relative z-10 w-full max-w-lg bg-white/80 backdrop-blur-xl border border-orange-100 rounded-3xl p-6 shadow-[0_8px_30px_rgba(255,100,0,0.15)] hover:shadow-[0_12px_50px_rgba(255,150,50,0.25)] transition-all duration-500 ease-out transform hover:-translate-y-1">
+      <div className="relative z-10 w-full max-w-lg bg-white backdrop-blur-xl border border-orange-100 rounded-3xl p-6 shadow-[0_8px_30px_rgba(255,100,0,0.15)] hover:shadow-[0_12px_50px_rgba(255,150,50,0.25)] transition-all duration-500 ease-out transform hover:-translate-y-1">
         <div className="text-center mb-6">
           <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-red-500 animate-gradient">
             Buy Data
