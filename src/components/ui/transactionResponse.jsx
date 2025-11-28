@@ -55,7 +55,7 @@ const TransactionModal = ({ open, onClose, transaction }) => {
         <p className="text-gray-700 text-center mb-6">{description}</p>
         <button
           onClick={onClose}
-          className={`mt-2 px-6 py-2 rounded-xl bg-${color}-600 text-white font-semibold hover:brightness-110 transition-all`}
+          className={`mt-2 px-6 py-2 rounded-xl bg-${color}-600 text-black font-semibold hover:brightness-110 transition-all`}
         >
           Close
         </button>
