@@ -7,6 +7,7 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import SEOHead from "../components/ui/seo.jsx";
 const Login = () => {
+  const baseURL = import.meta.env.VITE_API_URL;
   const [loading, setLoading] = useState(false);
   const [email, setMail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,7 +16,7 @@ const Login = () => {
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post("https://paystarbackend.vercel.app/login", { email, password });
+      const response = await axios.post(`${baseURL}/login`, { email, password });
 
       // ✅ Check HTTP response status
       if (response.status === 200 || response.status === 201) {

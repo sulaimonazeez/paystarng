@@ -5,17 +5,19 @@ import ServiceGrid from '../components/ui/ServiceGrid';
 import BottomNav from "../components/ui/bottomNav.jsx";
 import axiosInstance from "../api/utilities.jsx";
 import SEOHead from "../components/ui/seo.jsx";
+import PinSuccessModal from "../components/ui/pinSuccessfulModal.jsx";
+import SetPinModal from "../components/ui/pinStatus.jsx"; // Import your modal
 
 const Dashboard = () => {
   const [data, setData] = useState(null);
   const [user, setUser] = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [loadingUser, setLoadingUser] = useState(true);
-
-  // Combined loading state
+  const [openModal, setOpenModal] = useState(false); // modal state
+  const [pinLoading, setPinLoading] = useState(false);
+  const [successModalOpen, setSuccessModalOpen] = useState(false);
   const loading = loadingProfile || loadingUser;
-
-  // Fetch user balance/profile
+  
   const fetchProfile = async () => {
     try {
       const response = await axiosInstance.get("/api/balance");
@@ -47,10 +49,42 @@ const Dashboard = () => {
     }
   };
 
+  // Check if user has PIN
+  const checkPin = async () => {
+    try {
+      const res = await axiosInstance.get("/api/pin/status");
+      if (res.data && res.data.status === true) {
+        setOpenModal(true);
+      }
+    } catch (err) {
+      console.error("Error checking PIN:", err.message);
+      setOpenModal(true); // fallback: show modal if check fails
+    }
+  };
+
   useEffect(() => {
     fetchProfile();
     fetchUser();
+    checkPin();
   }, []);
+
+  // Handle PIN submission
+  const handlePinSubmit = async (pin) => {
+    try {
+      setPinLoading(true);
+      const res = await axiosInstance.post("/api/pin/set-up", { pin });
+
+      if (res.status !== 200 && res.status !== 201) throw new Error("Failed to set PIN");
+
+      setOpenModal(false);
+      setSuccessModalOpen(true);
+    } catch (err) {
+      console.error(err);
+      alert("Error setting PIN. Try again.");
+    } finally {
+      setPinLoading(false);
+    }
+  };
 
   return (
     <div>
@@ -74,6 +108,14 @@ const Dashboard = () => {
           <BottomNav />
         </div>
       </div>
+      {openModal && (
+        <SetPinModal
+          onClose={() => setOpenModal(false)}
+          onSubmit={handlePinSubmit}
+          loading={pinLoading} // optional prop to show spinner in modal
+        />
+      )}
+      <PinSuccessModal open={successModalOpen} onClose={() => setSuccessModalOpen(false)} />
     </div>
   );
 };

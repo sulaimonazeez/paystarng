@@ -6,6 +6,7 @@ import { Link, useNavigate } from "react-router-dom";
 import SEOHead from "../components/ui/seo.jsx";
 
 const Signup = () => {
+  const baseURL = import.meta.env.VITE_API_URL;
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const [firstName, setFirstName] = useState("");
@@ -16,7 +17,7 @@ const Signup = () => {
 
   const formSubmition = async () => {
     try {
-      const response = await axios.post("https://paystarbackend.vercel.app/create", {
+      const response = await axios.post(`${baseURL}/create`, {
         firstName,
         lastName,
         email,

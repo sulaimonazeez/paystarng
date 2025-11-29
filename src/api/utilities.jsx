@@ -1,8 +1,9 @@
 import axios from "axios";
 
-const API_BASE_URL = "https://paystarbackend.vercel.app";
+const dev = false;
+const baseURL = import.meta.env.VITE_API_URL;
 const axiosInstance = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: baseURL,
   headers: {
     "Content-Type": "application/json",
   },
