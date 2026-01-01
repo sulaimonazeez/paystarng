@@ -43,7 +43,7 @@ const Login = () => {
 useEffect(() => {
     const checkAuth = async () => {
       try {
-        await axios.get(`${baseURL}/auth/check`, { withCredentials: true });
+        await axios.get(`${baseURL}/api/check`, { withCredentials: true });
         navigate("/home"); // user still logged in
       } catch {
         navigate("/login"); // user not authenticated
