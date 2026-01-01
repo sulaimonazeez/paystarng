@@ -12,7 +12,6 @@ const NavBar = () => {
       relative
       overflow-hidden
     ">
-      
       {/* glowing animated background */}
       <div className="
         absolute inset-0 

@@ -5,6 +5,7 @@ import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import SEOHead from "../components/ui/seo.jsx";
 
+
 const Signup = () => {
   const baseURL = import.meta.env.VITE_API_URL;
   const [loading, setLoading] = useState(false);

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import NavBar from "./navbar.jsx";
 import { useParams } from "react-router-dom";
+
 import UserTable from "./userTable.jsx";
 import axiosInstance from "../api/utilities.jsx";
 

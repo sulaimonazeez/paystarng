@@ -1,7 +1,6 @@
 import React from "react";
 import MainGrid from "./mainGrid.jsx";
 import { useNavigate } from "react-router-dom";
-
 const ModelApp = ({ data }) => {
   const filteredData = Array.isArray(data)
     ? data.filter((item) => item !== "User")

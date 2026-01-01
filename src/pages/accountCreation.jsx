@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { CreditCard } from "lucide-react";
 import BottomNav from "../components/ui/bottomNav.jsx";
+
 import axiosInstance from "../api/utilities.jsx";
 import { Link } from "react-router-dom";
 

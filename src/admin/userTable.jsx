@@ -9,6 +9,7 @@ const UserTable = ({ data, onDelete, handleEdit }) => {
     );
   }
 
+
   const excludeFields = ["_id", "__v", "password", "user"];
   const tableHeaders = Object.keys(data[0]).filter(
     (key) => !excludeFields.includes(key)

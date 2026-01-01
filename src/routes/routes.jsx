@@ -11,6 +11,7 @@ import Admin from "../pages/admin.jsx";
 import Signup from "../pages/signup.jsx";
 import PrivateRoute from "../context/privateRoute.jsx";
 import LandingPage from "../pages/galaxy.jsx";
+
 import AccountCard from "../pages/accountCreation.jsx";
 import PaystackForm from "../pages/paystackForm.jsx";
 import Cable from "../pages/cable.jsx";
