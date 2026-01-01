@@ -40,17 +40,6 @@ const Login = () => {
       setLoading(false);
     }
   };
-useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        await axios.get(`${baseURL}/api/check`, { withCredentials: true });
-        navigate("/home"); // user still logged in
-      } catch {
-        navigate("/login"); // user not authenticated
-      }
-    };
-    checkAuth();
-  }, [navigate, baseURL]);
   return (
     <>
       <SEOHead title="Login" />
