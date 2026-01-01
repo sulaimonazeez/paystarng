@@ -2,8 +2,6 @@ import { createContext, useState, useEffect } from "react";
 
 export const AuthContext = createContext();
 
-
-
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [role, setRole] = useState(null);          // 👈 NEW
@@ -21,7 +19,7 @@ export const AuthProvider = ({ children }) => {
     } else {
       localStorage.removeItem("access_token");
       localStorage.removeItem("expires_in");
-      localStorage.removeItem("role");
+      localStorage.removeItem("role");  // 👈 Clear role
       setToken(null);
       setRole(null);
     }
@@ -34,7 +32,7 @@ export const AuthProvider = ({ children }) => {
 
     localStorage.setItem("access_token", token);
     localStorage.setItem("expires_in", expiresAt);
-    localStorage.setItem("role", userRole);
+    localStorage.setItem("role", userRole); // 👈 Save role
 
     setToken(token);
     setRole(userRole);

@@ -3,19 +3,29 @@ import { Navigate } from "react-router-dom";
 import { AuthContext } from "./authContext.jsx";
 
 const PrivateRoute = ({ element, allowedRoles }) => {
-  const { token, role, loading } = useContext(AuthContext);
+  const { user, loading } = useContext(AuthContext);
 
+  // ✅ Show loading while checking authentication
   if (loading) {
-    return <div className="text-light text-center mt-5">Loading...</div>;
+    return (
+      <div className="text-white text-center mt-5">
+        Loading...
+      </div>
+    );
   }
 
-  if (!token) return <Navigate to="/login" replace />;
-
-  // Only check role after loading is done
-  if (allowedRoles && role && !allowedRoles.includes(role)) {
-    return <Navigate to="/app" replace />; // normal user redirected if accessing admin
+  // ❌ If no user, redirect to login
+  if (!user) {
+    return <Navigate to="/login" replace />;
   }
 
+  // 🔒 If allowedRoles is specified, check user's role
+  if (allowedRoles && user.role && !allowedRoles.includes(user.role)) {
+    // Example: redirect normal user away from admin pages
+    return <Navigate to="/app" replace />;
+  }
+
+  // ✅ User authenticated and role allowed
   return element;
 };
 
