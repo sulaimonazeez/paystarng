@@ -1,54 +1,45 @@
-import { createContext, useState, useEffect } from "react";
+import { createContext, useState, useEffect, useCallback } from "react";
+import axios from "axios";
 
 export const AuthContext = createContext();
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState(null);
-  const [role, setRole] = useState(null);          // 👈 NEW
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // 🔹 Check auth once on app mount
   useEffect(() => {
-    const savedToken = localStorage.getItem("access_token");
-    const savedRole = localStorage.getItem("role"); // 👈 NEW
-    const expiresIn = localStorage.getItem("expires_in");
-
-    if (savedToken && expiresIn && Date.now() < parseInt(expiresIn)) {
-      setToken(savedToken);
-      setRole(savedRole); // 👈 Load role
-      console.log("✅ Token valid");
-    } else {
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("expires_in");
-      localStorage.removeItem("role");  // 👈 Clear role
-      setToken(null);
-      setRole(null);
-    }
-
-    setLoading(false);
+    const checkAuth = async () => {
+      try {
+        const res = await axios.get(`${API_BASE_URL}/api/check`, { withCredentials: true });
+        setUser(res.data.user);
+      } catch {
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkAuth();
   }, []);
 
-  const login = (token, expiresIn, userRole) => {
-    const expiresAt = Date.now() + expiresIn * 1000;
+  const login = useCallback((userData) => {
+    setUser(userData);
+  }, []);
 
-    localStorage.setItem("access_token", token);
-    localStorage.setItem("expires_in", expiresAt);
-    localStorage.setItem("role", userRole); // 👈 Save role
-
-    setToken(token);
-    setRole(userRole);
-  };
-
-  const logout = () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("expires_in");
-    localStorage.removeItem("role");
-
-    setToken(null);
-    setRole(null);
-  };
+  const logout = useCallback(async () => {
+    try {
+      await axios.post(`${API_BASE_URL}/api/logout`, {}, { withCredentials: true });
+      console.log("Logout....");
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUser(null);
+    }
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ token, role, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );
