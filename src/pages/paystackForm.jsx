@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { FaArrowLeft } from "react-icons/fa";
+import { loadPaystack } from "../utils/paystackLoader";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../api/utilities.jsx";
 
@@ -20,32 +21,35 @@ const PaystackForm = () => {
   };
 
   // Paystack
-  const payWithPaystack = () => {
-    if (!amount || !data.email) {
-      alert("Enter amount and load email");
-      return;
-    }
+  const payWithPaystack = async () => {
+  if (!amount || !data.email) {
+    alert("Enter amount and load email");
+    return;
+  }
 
-    const handler = window.PaystackPop.setup({
-      key: publicKey,
-      email: data.email,
-      amount: amount * 100,
-      ref: new Date().getTime().toString(),
-      metadata: {
-        custom_fields: [
-          {
-            display_name: "Name",
-            variable_name: "name",
-            value: `${data.firstname} ${data.lastname}`,
-          },
-        ],
-      },
-      callback: onSuccess,
-      onClose,
-    });
+  // 👇 Load Paystack SDK only when needed
+  await loadPaystack();
 
-    handler.openIframe();
-  };
+  const handler = window.PaystackPop.setup({
+    key: publicKey,
+    email: data.email,
+    amount: amount * 100,
+    ref: new Date().getTime().toString(),
+    metadata: {
+      custom_fields: [
+        {
+          display_name: "Name",
+          variable_name: "name",
+          value: `${data.firstname} ${data.lastname}`,
+        },
+      ],
+    },
+    callback: onSuccess,
+    onClose,
+  });
+
+  handler.openIframe();
+};
 
   // Fetch user
   useEffect(() => {
