@@ -1,3 +1,4 @@
+// LandingPage.jsx
 import React, { useRef, Suspense, lazy } from "react";
 import Hero from "../components/Hero";
 import Features from "../components/Features";
@@ -8,7 +9,7 @@ import { motion, useInView } from "framer-motion";
 import SEOHead from "../components/ui/seo.jsx";
 import { useNavigate } from "react-router-dom";
 
-// Lazy-load GalaxyCanvas for non-blocking initial paint
+// Lazy-load GalaxyCanvas for non-blocking paint
 const GalaxyCanvas = lazy(() => import("../components/GalaxyCanvas"));
 
 export default function LandingPage() {
@@ -34,8 +35,12 @@ export default function LandingPage() {
       <div className="relative bg-black text-white overflow-x-hidden min-h-screen">
 
         {/* 🌌 GalaxyCanvas Lazy Loaded */}
-        <Suspense fallback={<div className="absolute inset-0 bg-black -z-20" />}>
-          <GalaxyCanvas />
+        <Suspense
+          fallback={
+            <div className="absolute inset-0 bg-black -z-20" />
+          }
+        >
+          <GalaxyCanvas maxStars={400} mobileOptimized />
         </Suspense>
 
         {/* Hero Section */}
