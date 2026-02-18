@@ -15,18 +15,6 @@ const PrivateRoute = ({ element, allowedRoles }) => {
     );
   }
 
-  // ❌ If no user, redirect to login
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-
-  // 🔒 If allowedRoles is specified, check user's role
-  if (allowedRoles && user.role && !allowedRoles.includes(user.role)) {
-    // Example: redirect normal user away from admin pages
-    return <Navigate to="/app" replace />;
-  }
-
-  // ✅ User authenticated and role allowed
   return element;
 };
 

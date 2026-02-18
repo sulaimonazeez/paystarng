@@ -1,32 +1,14 @@
 import { createContext, useState, useEffect, useCallback } from "react";
 import axios from "axios";
+import { setLogoutHandler } from "./authEvents";
 
 export const AuthContext = createContext();
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
 
-  // 🔹 Check auth once on app mount
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const res = await axios.get(`${API_BASE_URL}/api/check`, { withCredentials: true });
-        setUser(res.data.user);
-      } catch {
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-    checkAuth();
-  }, []);
-
-  const login = useCallback((userData) => {
-    setUser(userData);
-  }, []);
-
+  // ✅ Logout FIRST
   const logout = useCallback(async () => {
     try {
       await axios.post(`${API_BASE_URL}/api/logout`, {}, { withCredentials: true });
@@ -34,11 +16,22 @@ export const AuthProvider = ({ children }) => {
       console.error(err);
     } finally {
       setUser(null);
+      window.location.href = "/login"; // 🔥 force redirect on session expiry
     }
   }, []);
 
+  // ✅ Login
+  const login = useCallback((userData) => {
+    setUser(userData);
+  }, []);
+
+  // ✅ Register logout globally for axios interceptor
+  useEffect(() => {
+    setLogoutHandler(logout);
+  }, [logout]);
+
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

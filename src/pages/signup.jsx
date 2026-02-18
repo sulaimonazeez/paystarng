@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { User, Mail, Phone, Lock } from "lucide-react";
 import axios from "axios";
@@ -13,8 +13,10 @@ const Signup = () => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
+  const hasRun = useRef(false);
 
   const formSubmition = async () => {
     try {
@@ -41,6 +43,34 @@ const Signup = () => {
     setLoading(true);
     formSubmition();
   };
+
+useEffect(() => {
+    if (hasRun.current) return;
+    hasRun.current = true;
+
+    const checkAuth = async () => {
+      try {
+        const res = await axios.get(
+          `${baseURL}/api/check`,
+          { withCredentials: true }
+        );
+
+        if (res.status === 200 && res.data.user) {
+          login(res.data.user);
+          navigate("/app");
+        }
+
+      } catch {
+        console.error("Not authenticated");
+      } finally {
+        setCheckingAuth(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  if (checkingAuth) return null; // Prevent UI flash
 
   return (
     <div>

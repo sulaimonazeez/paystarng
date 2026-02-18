@@ -1,25 +1,30 @@
 import axios from "axios";
-
+import { triggerLogout } from "../context/authEvents";
 
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
-  withCredentials: true, // 🔥 REQUIRED for HTTP-only cookies
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// ❌ NO request interceptor needed anymore
-// Cookies are sent automatically by the browser
-
-// ✅ Response interceptor (lightweight)
 axiosInstance.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+
     if (error.response?.status === 401) {
-      // ❗ Do NOT clear storage (there is none)
-      // Let AuthContext handle logout / redirect
-      console.warn("Unauthorized – session expired");
+      console.warn("Session expired — logging out");
+
+      try {
+        await axios.post(
+          `${import.meta.env.VITE_API_URL}/api/logout`,
+          {},
+          { withCredentials: true }
+        );
+      } catch {}
+
+      triggerLogout(); // 🔥 tells React to logout user
     }
 
     return Promise.reject(error);
