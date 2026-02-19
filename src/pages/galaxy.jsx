@@ -49,7 +49,7 @@ export default function LandingPage() {
         {/* 🌌 Load Canvas AFTER paint */}
         {showCanvas && (
           <Suspense fallback={null}>
-            <GalaxyCanvas maxStars={300} mobileOptimized />
+            <GalaxyCanvas maxStars={50} mobileOptimized />
           </Suspense>
         )}
 
