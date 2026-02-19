@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { motion } from "framer-motion";
 import { Search, ArrowUpRight, ArrowDownLeft } from "lucide-react";
-import BottomNav from "../components/ui/bottomNav.jsx";
 import axiosInstance from "../api/utilities.jsx";
+
+// Lazy load BottomNav
+const BottomNav = lazy(() => import("../components/ui/bottomNav.jsx"));
 
 const TransactionHistory = () => {
   const [search, setSearch] = useState("");
@@ -14,29 +16,25 @@ const TransactionHistory = () => {
       try {
         const res = await axiosInstance.get("/api/transaction");
 
-        const mapped = res.data.transactions.map((t) => ({
-          id: t._id,
-          description: t.message || t.serviceType.toUpperCase(),
-          date: new Date(t.createdAt).toDateString(),
+        const mapped = res?.data?.transactions?.map((t) => {
+          const amount =
+            t?.responseData?.amount ??
+            t?.responseData?.transactionAmount ??
+            t?.responseData?.data?.amount ??
+            0;
 
-          type: t.status === "success" ? "Debit" : "Credit",
+          const isDebit = t.status === "success";
 
-          amount:
-            t.responseData?.amount ||
-            t.responseData?.transactionAmount ||
-            t.responseData?.transactionAmount ||
-            t.responseData?.data?.amount ||
-            0,
-
-          icon:
-            t.status === "success" ? (
-              <ArrowDownLeft size={20} />
-            ) : (
-              <ArrowUpRight size={20} />
-            ),
-
-          color: t.status === "success" ? "text-green-400" : "text-red-400",
-        }));
+          return {
+            id: t._id,
+            description: t.message || t.serviceType?.toUpperCase(),
+            date: new Date(t.createdAt).toDateString(),
+            type: isDebit ? "Debit" : "Credit",
+            amount,
+            icon: isDebit ? <ArrowDownLeft size={20} /> : <ArrowUpRight size={20} />,
+            color: isDebit ? "text-green-400" : "text-red-400",
+          };
+        }) ?? [];
 
         setTransactions(mapped.reverse());
       } catch (error) {
@@ -49,11 +47,15 @@ const TransactionHistory = () => {
     fetchTransactions();
   }, []);
 
-  const filtered = transactions.filter(
-    (t) =>
-      t.description.toLowerCase().includes(search.toLowerCase()) ||
-      t.type.toLowerCase().includes(search.toLowerCase())
-  );
+  // Memoized filtered transactions
+  const filteredTransactions = useMemo(() => {
+    const lowerSearch = search.toLowerCase();
+    return transactions.filter(
+      (t) =>
+        t.description?.toLowerCase().includes(lowerSearch) ||
+        t.type?.toLowerCase().includes(lowerSearch)
+    );
+  }, [search, transactions]);
 
   return (
     <div>
@@ -64,6 +66,7 @@ const TransactionHistory = () => {
           transition={{ duration: 0.8 }}
           className="w-full max-w-3xl bg-white/10 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-[0_0_25px_rgba(59,130,246,0.5)] p-6 relative overflow-hidden"
         >
+          {/* Glowing border */}
           <motion.div
             initial={{ rotate: 0 }}
             animate={{ rotate: 360 }}
@@ -72,9 +75,9 @@ const TransactionHistory = () => {
           />
 
           <div className="relative z-10">
-            <h1 className="text-3xl font-bold text-center mb-8">
-              Transaction History
-            </h1>
+            <h1 className="text-3xl font-bold text-center mb-8">Transaction History</h1>
+
+            {/* Search */}
             <div className="relative mb-8">
               <Search className="absolute left-3 top-3 text-gray-400" size={20} />
               <input
@@ -85,18 +88,20 @@ const TransactionHistory = () => {
                 className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/10 border border-white/10 text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
               />
             </div>
+
+            {/* Transaction List */}
             <div className="space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
               {loading ? (
                 <p className="text-center text-gray-400">Loading...</p>
-              ) : filtered.length === 0 ? (
+              ) : filteredTransactions.length === 0 ? (
                 <p className="text-center text-gray-400">No transactions found 😢</p>
               ) : (
-                filtered.map((t, i) => (
+                filteredTransactions.map((t, i) => (
                   <motion.div
                     key={t.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.1 }}
+                    transition={{ delay: Math.min(i * 0.05, 0.3) }}
                     className="flex justify-between items-center bg-white/10 border border-white/10 rounded-2xl px-5 py-4 hover:bg-white/20 transition-all duration-300 shadow-sm hover:shadow-lg"
                   >
                     <div className="flex items-center gap-4">
@@ -108,10 +113,8 @@ const TransactionHistory = () => {
                         <p className="text-gray-400 text-sm">{t.date}</p>
                       </div>
                     </div>
-
                     <div className={`font-semibold ${t.color} text-right text-lg`}>
-                      {t.type === "Credit" ? "+" : "-"}₦
-                      {Number(t.amount).toLocaleString()}
+                      {t.type === "Credit" ? "+" : "-"}₦{Number(t.amount).toLocaleString()}
                     </div>
                   </motion.div>
                 ))
@@ -121,7 +124,10 @@ const TransactionHistory = () => {
         </motion.div>
       </div>
 
-      <BottomNav />
+      {/* Lazy BottomNav */}
+      <Suspense fallback={null}>
+        <BottomNav />
+      </Suspense>
     </div>
   );
 };

@@ -30,14 +30,21 @@ export default function Hero({ onCTAClick }) {
 
               <div className="mt-8 flex flex-col sm:flex-row gap-4 items-center justify-center lg:justify-start">
                 <motion.button
-                  onClick={onCTAClick}
-                  whileHover={isMobile ? {} : { scale: 1.03, boxShadow: "0 12px 40px rgba(124,58,237,0.25)" }}
-                  whileTap={{ scale: 0.98 }}
-                  className="relative inline-flex items-center gap-3 bg-gradient-to-r from-[#7c3aed] via-[#06b6d4] to-[#7ee3f7] text-black font-extrabold px-6 py-3 rounded-2xl"
-                >
-                  <span className="z-10">Get Started</span>
-                  <span className="absolute inset-0 rounded-2xl opacity-20 mix-blend-screen"></span>
-                </motion.button>
+  onClick={onCTAClick}
+  aria-describedby="cta-desc"
+  whileHover={isMobile ? {} : { scale: 1.03, boxShadow: "0 12px 40px rgba(124,58,237,0.25)" }}
+  whileTap={{ scale: 0.98 }}
+  className="relative inline-flex items-center gap-3 bg-gradient-to-r from-[#7c3aed] via-[#06b6d4] to-[#7ee3f7] text-black font-extrabold px-6 py-3 rounded-2xl"
+>
+  <span className="z-10">Get Started</span>
+
+  {/* Hidden screen reader description */}
+  <span id="cta-desc" className="sr-only">
+    Navigates to login page
+  </span>
+
+  <span className="absolute inset-0 rounded-2xl opacity-20 mix-blend-screen"></span>
+</motion.button>
 
                 <motion.a
                   href="#features"
