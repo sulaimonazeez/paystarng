@@ -1,21 +1,35 @@
-// LandingPage.jsx
-import React, { useRef, Suspense, lazy } from "react";
-import Hero from "../components/Hero";
-import Features from "../components/Features";
-import Pricing from "../components/Pricing";
-import Testimonials from "../components/Testimonials";
-import Footer from "../components/Footer";
-import { motion, useInView } from "framer-motion";
+import React, { useRef, Suspense, lazy, useEffect, useState } from "react";
 import SEOHead from "../components/ui/seo.jsx";
 import { useNavigate } from "react-router-dom";
 
-// Lazy-load GalaxyCanvas for non-blocking paint
+// ✅ Lazy load ALL heavy sections
+const Hero = lazy(() => import("../components/Hero"));
+const Features = lazy(() => import("../components/Features"));
+const Pricing = lazy(() => import("../components/Pricing"));
+const Testimonials = lazy(() => import("../components/Testimonials"));
+const Footer = lazy(() => import("../components/Footer"));
 const GalaxyCanvas = lazy(() => import("../components/GalaxyCanvas"));
+
+// ✅ Lazy load framer motion
+const MotionDiv = lazy(() =>
+  import("framer-motion").then((mod) => ({
+    default: mod.motion.div
+  }))
+);
 
 export default function LandingPage() {
   const featuresRef = useRef(null);
   const navigate = useNavigate();
-  const isInView = useInView(featuresRef, { once: true, margin: "-100px" });
+  const [showCanvas, setShowCanvas] = useState(false);
+
+  // 🟢 Load canvas AFTER first paint (non-blocking)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowCanvas(true);
+    }, 500); // allow main UI to load first
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleCTAClick = () => {
     featuresRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -24,46 +38,55 @@ export default function LandingPage() {
 
   return (
     <div>
-      {/* SEO Metadata */}
       <SEOHead
         title="Buy MTN, Glo, Airtel Airtime Online | PayStar"
         description="Recharge your phone instantly with PayStar. Fast and secure airtime & data purchase platform in Nigeria."
-        keywords="airtime, data, recharge, PayStar, MTN, Glo, Airtel, mobile recharge, wallet"
+        keywords="airtime, data, recharge, PayStar, MTN, Glo, Airtel"
       />
 
-      {/* Main Page */}
       <div className="relative bg-black text-white overflow-x-hidden min-h-screen">
 
-        {/* 🌌 GalaxyCanvas Lazy Loaded */}
-        <Suspense
-          fallback={
-            <div className="absolute inset-0 bg-black -z-20" />
-          }
-        >
-          <GalaxyCanvas maxStars={400} mobileOptimized />
+        {/* 🌌 Load Canvas AFTER paint */}
+        {showCanvas && (
+          <Suspense fallback={null}>
+            <GalaxyCanvas maxStars={300} mobileOptimized />
+          </Suspense>
+        )}
+
+        {/* 🟢 Hero loads first (critical) */}
+        <Suspense fallback={<div className="h-screen bg-black" />}>
+          <Hero onCTAClick={handleCTAClick} />
         </Suspense>
 
-        {/* Hero Section */}
-        <Hero onCTAClick={handleCTAClick} />
-
-        {/* Features Section */}
+        {/* 🟢 Features */}
         <div ref={featuresRef}>
-          <Features />
+          <Suspense fallback={null}>
+            <Features />
+          </Suspense>
         </div>
 
-        {/* Pricing with fade-in animation */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9 }}
-          viewport={{ once: true }}
-        >
-          <Pricing />
-        </motion.div>
+        {/* 🟢 Pricing (animation loaded lazily) */}
+        <Suspense fallback={null}>
+          <MotionDiv
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7 }}
+            viewport={{ once: true }}
+          >
+            <Pricing />
+          </MotionDiv>
+        </Suspense>
 
-        {/* Testimonials & Footer */}
-        <Testimonials />
-        <Footer />
+        {/* 🟢 Testimonials */}
+        <Suspense fallback={null}>
+          <Testimonials />
+        </Suspense>
+
+        {/* 🟢 Footer */}
+        <Suspense fallback={null}>
+          <Footer />
+        </Suspense>
+
       </div>
     </div>
   );
