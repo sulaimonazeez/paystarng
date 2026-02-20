@@ -4,7 +4,6 @@ import { motion, useReducedMotion } from "framer-motion";
 export default function Hero({ onCTAClick }) {
   const isMobile = typeof window !== "undefined" && window.innerWidth <= 640;
   const shouldReduceMotion = useReducedMotion();
-
   return (
     <section className="min-h-screen flex items-center justify-center relative z-10">
       <div className="container mx-auto px-6 lg:px-20">

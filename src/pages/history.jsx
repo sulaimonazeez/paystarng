@@ -6,6 +6,22 @@ import axiosInstance from "../api/utilities.jsx";
 // Lazy load BottomNav
 const BottomNav = lazy(() => import("../components/ui/bottomNav.jsx"));
 
+/* Skeleton Loader */
+const TransactionSkeleton = () => {
+  return (
+    <div className="flex justify-between items-center bg-white/10 border border-white/10 rounded-2xl px-5 py-4 animate-pulse">
+      <div className="flex items-center gap-4">
+        <div className="w-10 h-10 rounded-xl bg-white/20" />
+        <div>
+          <div className="w-32 h-3 bg-white/20 rounded mb-2" />
+          <div className="w-24 h-2 bg-white/20 rounded" />
+        </div>
+      </div>
+      <div className="w-20 h-4 bg-white/20 rounded" />
+    </div>
+  );
+};
+
 const TransactionHistory = () => {
   const [search, setSearch] = useState("");
   const [transactions, setTransactions] = useState([]);
@@ -47,7 +63,6 @@ const TransactionHistory = () => {
     fetchTransactions();
   }, []);
 
-  // Memoized filtered transactions
   const filteredTransactions = useMemo(() => {
     const lowerSearch = search.toLowerCase();
     return transactions.filter(
@@ -66,7 +81,7 @@ const TransactionHistory = () => {
           transition={{ duration: 0.8 }}
           className="w-full max-w-3xl bg-white/10 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-[0_0_25px_rgba(59,130,246,0.5)] p-6 relative overflow-hidden"
         >
-          {/* Glowing border */}
+          {/* Glow */}
           <motion.div
             initial={{ rotate: 0 }}
             animate={{ rotate: 360 }}
@@ -75,7 +90,9 @@ const TransactionHistory = () => {
           />
 
           <div className="relative z-10">
-            <h1 className="text-3xl font-bold text-center mb-8">Transaction History</h1>
+            <h1 className="text-3xl font-bold text-center mb-8">
+              Transaction History
+            </h1>
 
             {/* Search */}
             <div className="relative mb-8">
@@ -89,10 +106,12 @@ const TransactionHistory = () => {
               />
             </div>
 
-            {/* Transaction List */}
+            {/* List */}
             <div className="space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
               {loading ? (
-                <p className="text-center text-gray-400">Loading...</p>
+                Array.from({ length: 6 }).map((_, i) => (
+                  <TransactionSkeleton key={i} />
+                ))
               ) : filteredTransactions.length === 0 ? (
                 <p className="text-center text-gray-400">No transactions found 😢</p>
               ) : (
@@ -114,7 +133,8 @@ const TransactionHistory = () => {
                       </div>
                     </div>
                     <div className={`font-semibold ${t.color} text-right text-lg`}>
-                      {t.type === "Credit" ? "+" : "-"}₦{Number(t.amount).toLocaleString()}
+                      {t.type === "Credit" ? "+" : "-"}₦
+                      {Number(t.amount).toLocaleString()}
                     </div>
                   </motion.div>
                 ))
@@ -124,7 +144,6 @@ const TransactionHistory = () => {
         </motion.div>
       </div>
 
-      {/* Lazy BottomNav */}
       <Suspense fallback={null}>
         <BottomNav />
       </Suspense>

@@ -6,19 +6,50 @@ const PinModal = ({ open, onClose, onSubmit }) => {
   const [loading, setLoading] = useState(false);
   const inputsRef = useRef([]);
 
-  // Hooks always run
+  // Reset when opened
   useEffect(() => {
     if (open) {
       setPin(["", "", "", ""]);
       setError(false);
       setLoading(false);
-      // Focus first input after DOM render
       setTimeout(() => inputsRef.current[0]?.focus(), 50);
     }
   }, [open]);
 
+  // 🔥 AUTO VERIFY WHEN 4 DIGITS ENTERED
+  useEffect(() => {
+    const joined = pin.join("");
+
+    if (joined.length === 4 && !loading) {
+      verifyPin(joined);
+    }
+  }, [pin]);
+
+  const verifyPin = async (joined) => {
+    setLoading(true);
+    setError(false);
+
+    try {
+      const ok = await onSubmit(joined);
+
+      if (!ok) {
+        setError(true);
+        setPin(["", "", "", ""]);
+        setTimeout(() => inputsRef.current[0]?.focus(), 100);
+      } else {
+        onClose();
+      }
+    } catch (err) {
+      setError(true);
+      setPin(["", "", "", ""]);
+      setTimeout(() => inputsRef.current[0]?.focus(), 100);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleChange = (val, i) => {
-    if (!/^\d?$/.test(val)) return; // only digits
+    if (!/^\d?$/.test(val)) return;
 
     const updated = [...pin];
     updated[i] = val;
@@ -42,36 +73,10 @@ const PinModal = ({ open, onClose, onSubmit }) => {
     }
   };
 
-  const handleSubmit = async () => {
-    const joined = pin.join("");
-    if (joined.length !== 4) return;
-
-    setLoading(true);
-    setError(false);
-
-    try {
-      const ok = await onSubmit(joined);
-      if (!ok) {
-        setError(true);
-        setPin(["", "", "", ""]);
-        setTimeout(() => inputsRef.current[0]?.focus(), 100);
-      } else {
-        onClose();
-      }
-    } catch (err) {
-      setError(true);
-      setPin(["", "", "", ""]);
-      setTimeout(() => inputsRef.current[0]?.focus(), 100);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-xl">
-
       <div
         className={`relative bg-[#0b0b0d]/95 border border-white/10 p-8 rounded-3xl w-[90%] max-w-sm shadow-xl 
         ${error ? "animate-shake" : ""}`}
@@ -97,24 +102,22 @@ const PinModal = ({ open, onClose, onSubmit }) => {
           ))}
         </div>
 
-        {error && (
+        {loading && (
+          <p className="text-purple-400 text-center mb-3 animate-pulse">
+            Verifying...
+          </p>
+        )}
+
+        {error && !loading && (
           <p className="text-red-400 text-center mb-3">
             Incorrect PIN. Please try again.
           </p>
         )}
 
-        <button
-          onClick={handleSubmit}
-          disabled={loading || pin.join("").length < 4}
-          className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-blue-500 text-white font-bold"
-        >
-          {loading ? "Verifying..." : "Confirm"}
-        </button>
-
         {!loading && (
           <button
             onClick={onClose}
-            className="mt-3 w-full text-center text-gray-300 hover:text-white"
+            className="w-full text-center text-gray-300 hover:text-white"
           >
             Cancel
           </button>

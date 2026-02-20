@@ -1,273 +1,261 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import NetworkSelection from "../components/ui/NetworkSelection";
 import FormField from "../components/ui/FormField";
 import ActionCard from "../components/ui/ActionCard";
 import BottomNav from "../components/ui/bottomNav.jsx";
 import axiosInstance from "../api/utilities.jsx";
 import PinModal from "../components/ui/pinModal.jsx";
-import SEOHead from "../components/ui/seo.jsx";
 import TransactionModal from "../components/ui/transactionResponse.jsx";
+import SEOHead from "../components/ui/seo.jsx";
 
+const NETWORK_PREFIX_MAP = {
+  "0803": "mtn",
+  "0703": "mtn",
+  "0813": "mtn",
+  "0805": "glo",
+  "0705": "glo",
+  "0802": "airtel",
+  "0708": "airtel",
+  "0809": "9mobile",
+  "0817": "9mobile",
+  "0818": "9mobile",
+};
 
 const BuyDataForm = () => {
+  // States
+  const [plansData, setPlansData] = useState({});
+  const [network, setNetwork] = useState("");
+  const [dataType, setDataType] = useState("");
+  const [dataPlan, setDataPlan] = useState(null);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [serviceID, setServiceID] = useState(null);
+  const [fetching, setFetching] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [pinOpen, setPinOpen] = useState(false);
   const [transaction, setTransaction] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [network, setNetwork] = useState("");
-  const [dataType, setDataType] = useState("");
-  const [dataPlan, setDataPlan] = useState(null); // was ""
-  const [phoneNumber, setPhoneNumber] = useState(null);
-  const [plansData, setPlansData] = useState({}); // structured plans
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState(null);
-  const [codes, setCode] = useState();
-  const [fetching, setFetching] = useState(true);
-  const [serviceID, setServiceID] = useState(null);
-  
+
+  // --- Fetch plans on mount ---
   useEffect(() => {
     const fetchPlans = async () => {
       try {
-        const response = await axiosInstance.get("/api/dataplan");
-        if (response.status === 200 && response.data.status === 200) {
-          const fetchedPlans = response.data.data;
-
-          // Transform into structured object: { network: { type: [plans] } }
-          const structuredPlans = {};
-          fetchedPlans.forEach((plan) => {
+        const res = await axiosInstance.get("/api/dataplan");
+        if (res.status === 200 && res.data.status === 200) {
+          const structured = {};
+          res.data.data.forEach((plan) => {
             const net = plan.network?.toLowerCase() || "unknown";
             const type = plan.dataType?.toLowerCase() || "default";
-
-            if (!structuredPlans[net]) structuredPlans[net] = {};
-            if (!structuredPlans[net][type]) structuredPlans[net][type] = [];
-
-            structuredPlans[net][type].push({
-              plan: plan.dataPlan || "Unknown Plan",
-              price: plan.amount || 0,
-              code: plan.serviceID || "",
-              validity: plan.validity || "",
+            if (!structured[net]) structured[net] = {};
+            if (!structured[net][type]) structured[net][type] = [];
+            structured[net][type].push({
+              plan: plan.dataPlan,
+              price: plan.amount,
+              code: plan.serviceID,
+              validity: plan.validity,
             });
           });
-
-          setPlansData(structuredPlans);
-          setError(null);
-          setFetching(false);
+          setPlansData(structured);
         } else {
-          setError("Failed to fetch plans: Invalid response from server");
+          setError("Failed to fetch plans.");
         }
       } catch (err) {
-        console.error("Error fetching plans:", err);
-        setError("Error fetching plans. Please try again later.");
+        console.error(err);
+        setError("Error fetching plans.");
       } finally {
         setFetching(false);
       }
-      
     };
-
     fetchPlans();
   }, []);
 
-  const availableDataTypes = network
-    ? Object.keys(plansData[network.toLowerCase()] || {})
-    : [];
-  const availablePlans =
-    network && dataType
-      ? plansData[network.toLowerCase()][dataType.toLowerCase()] || []
-      : [];
+  // --- Auto detect network from phone number ---
+  useEffect(() => {
+    if (!phoneNumber || phoneNumber.length < 4) return;
+    const prefix = phoneNumber.slice(0, 4);
+    const detected = NETWORK_PREFIX_MAP[prefix];
+    if (detected && detected !== network) setNetwork(detected);
+  }, [phoneNumber]);
 
+  // --- Memoized available data types and plans ---
+  const availableDataTypes = useMemo(
+    () => (network ? Object.keys(plansData[network] || {}) : []),
+    [network, plansData]
+  );
+  const availablePlans = useMemo(
+    () => (network && dataType ? plansData[network]?.[dataType] || [] : []),
+    [network, dataType, plansData]
+  );
+
+  // --- Handle buy data ---
   const handleBuyData = async () => {
+    if (!network || !dataType || !serviceID || !phoneNumber) {
+      alert("Please fill all fields");
+      return;
+    }
     setLoading(true);
-    setSuccess(false);
-    const datas = {
-    network,
-    dataType,
-    serviceId: serviceID,
-    phoneNumber:phoneNumber
-  }
-  if (phoneNumber === null || !network || !serviceID){
-    alert("Please Fill Out the form");
-    return null;
-  }
-  try { 
-    const response = await axiosInstance.post("/api/data/purchase", datas);
-    setTransaction({
-      status: response.status, // <-- your server returns this
-      message: response.data.message || "No message",
-    });
-    setModalOpen(true);
-    if (response.status === 200 || response.status === 201 || response.status === 202) {
-      setSuccess(true);
-    } else {
+    try {
+      const res = await axiosInstance.post("/api/data/purchase", {
+        network,
+        dataType,
+        serviceId: serviceID,
+        phoneNumber,
+      });
+      setTransaction({
+        status: res.status,
+        message: res.data.message || "Purchase successful",
+      });
+      setModalOpen(true);
+    } catch (err) {
+      setTransaction({
+        status: err.response?.status || 500,
+        message: err.response?.data?.message || err.message,
+      });
+      setModalOpen(true);
+    } finally {
       setLoading(false);
     }
-  } catch (err) {
-    setTransaction({
-    status: err.response?.status || 500,
-    message: err.response?.data?.message || err.message,
-  });
-    setModalOpen(true)
-  } finally {
-    setLoading(false);
-  }
-      setTimeout(() => setSuccess(false), 2500);
-    };
-    const verifyPinAndPurchase = async (enteredPin) => {
-  try {
-    if (!enteredPin) {
-      alert("No PIN was entered");
+  };
+
+  // --- Verify PIN before purchase ---
+  const verifyPinAndPurchase = async (pin) => {
+    if (!pin) {
+      alert("No PIN entered");
       return false;
     }
-
-    const response = await axiosInstance.get("/api/verify/pin", {
-      params: { pin: enteredPin }
-    });
-
-    if (response.status === 200 || response.status === 201) {
-      if (enteredPin !== response.data.pin) return false;
-
-      await handleBuyData();
-      return true;
-    } else {
-      alert("Incorrect PIN");
+    try {
+      const res = await axiosInstance.get("/api/verify/pin", { params: { pin } });
+      if (res.status === 200 && res.data.pin === pin) {
+        await handleBuyData();
+        setPinOpen(false);
+        return true;
+      } else {
+        alert("Incorrect PIN");
+        return false;
+      }
+    } catch (err) {
+      alert(err.message);
       return false;
     }
+  };
 
-  } catch (error) {
-    console.log(error.message);
-    alert(error.message);
-    return false;
-  }
-};
-    const verifyName = () => {
-  try {
-    if (!network || !phoneNumber || !serviceID) {
-      alert("Please fill out the form");
+  // --- Open PIN modal ---
+  const openPinModal = () => {
+    if (!network || !dataType || !serviceID || !phoneNumber) {
+      alert("Please fill all fields before purchase.");
       return;
     }
     setPinOpen(true);
-  } catch (error) {
-    alert(error.message);
-  }
-};
-    
+  };
+
   if (fetching) {
+    // Premium skeleton loader
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-orange-600 font-semibold">Loading plans...</p>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-orange-50 via-white to-yellow-50">
+        <div className="text-center animate-pulse space-y-3">
+          <div className="w-32 h-6 bg-orange-200 rounded mx-auto"></div>
+          <div className="w-64 h-6 bg-orange-200 rounded mx-auto"></div>
+          <div className="w-48 h-6 bg-orange-200 rounded mx-auto"></div>
         </div>
       </div>
     );
   }
+
   return (
     <div>
       <SEOHead title="Buy Bundle" />
-    <div className="min-h-screen bg-gradient-to-b from-orange-100 via-white to-yellow-50 flex items-center justify-center font-sans relative overflow-hidden p-3 pb-24">
-      {/* Floating orbs */}
-      <div className="absolute w-[30rem] h-[30rem] bg-gradient-to-r from-orange-400 to-yellow-300 rounded-full blur-[120px] top-[-10rem] left-[-10rem] opacity-40 animate-pulse"></div>
-      <div className="absolute w-[25rem] h-[25rem] bg-gradient-to-r from-red-500 to-orange-500 rounded-full blur-[120px] bottom-[-10rem] right-[-10rem] opacity-40 animate-pulse"></div>
+      <div className="min-h-screen bg-gradient-to-b from-orange-100 via-white to-yellow-50 flex items-center justify-center p-3 pb-24 relative overflow-hidden font-sans">
+        {/* Background Orbs */}
+        <div className="absolute w-[30rem] h-[30rem] rounded-full blur-[120px] top-[-10rem] left-[-10rem] bg-gradient-to-r from-orange-400 to-yellow-300 opacity-40 animate-pulse"></div>
+        <div className="absolute w-[25rem] h-[25rem] rounded-full blur-[120px] bottom-[-10rem] right-[-10rem] bg-gradient-to-r from-red-500 to-orange-500 opacity-40 animate-pulse"></div>
 
-      {/* Card */}
-      <div className="relative z-10 w-full max-w-lg bg-white backdrop-blur-xl border border-orange-100 rounded-3xl p-6 shadow-[0_8px_30px_rgba(255,100,0,0.15)] hover:shadow-[0_12px_50px_rgba(255,150,50,0.25)] transition-all duration-500 ease-out transform hover:-translate-y-1">
-        <div className="text-center mb-6">
-          <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-red-500 animate-gradient">
-            Buy Data
-          </h2>
-          <p className="text-gray-600 text-sm mt-2">Fast • Secure • Reliable</p>
-        </div>
+        {/* Card */}
+        <div className="relative z-10 w-full max-w-lg bg-white backdrop-blur-xl border border-orange-100 rounded-3xl p-6 shadow-lg hover:shadow-2xl transition-all duration-500">
+          <div className="text-center mb-6">
+            <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-red-500">
+              Buy Data
+            </h2>
+            <p className="text-gray-600 mt-2 text-sm">Fast • Secure • Reliable</p>
+          </div>
 
-        {error && <p className="text-red-600 text-center mb-4">{error}</p>}
+          {error && <p className="text-red-600 text-center mb-4">{error}</p>}
 
-        <div className="space-y-5">
-          <NetworkSelection
-            selectedNetwork={network.toLowerCase()}
-            onSelect={setNetwork}
-            setDataType={setDataType}
-            setDataPlan={setDataPlan}
-          />
+          <div className="space-y-5">
+            <NetworkSelection
+              selectedNetwork={network}
+              onSelect={(n) => {
+                setNetwork(n);
+                setDataType("");
+                setDataPlan(null);
+                setServiceID(null);
+              }}
+              setDataType={setDataType}
+              setDataPlan={setDataPlan}
+            />
 
-          <FormField
-            label="Network"
-            type="select"
-            options={["Select Network", ...Object.keys(plansData)]}
-            value={network.toLowerCase()}
-            onChange={(e) => {
-              setNetwork(e.target.value);
-              setDataType("");
-              setDataPlan("");
-            }}
-          />
+            <FormField
+              label="Data Type"
+              type="select"
+              options={["Select Data Type", ...availableDataTypes]}
+              value={dataType}
+              onChange={(e) => {
+                setDataType(e.target.value);
+                setDataPlan(null);
+                setServiceID(null);
+              }}
+            />
 
-           <FormField
-  label="Data Type"
-  type="select"
-  options={["Select Data Type", ...availableDataTypes]}
-  value={dataType}
-  onChange={(e) => {
-    setDataType(e.target.value);
-    setDataPlan(""); // <-- currently resets, but then the select auto-selects first option
-  }}
-/>
-          
-          <FormField
-  label="Data Plan"
-  type="select"
-  options={["Select Data Plan", ...availablePlans.map(p => `${network.toUpperCase()} ${p.plan} - ₦${p.price} ${p.validity}`)]}
-  value={
-  dataPlan 
-    ? `${network.toUpperCase()} ${dataPlan.plan} - ₦${dataPlan.price} ${dataPlan.validity}`
-    : ""
-} // <- empty string until user selects
-  onChange={(e) => {
-    if (!e.target.value) return; // placeholder, do nothing
-    const selectedIndex = e.target.selectedIndex - 1; // subtract 1 for placeholder
-    setServiceID(availablePlans[selectedIndex].code);
-    setDataPlan(availablePlans[selectedIndex]);
-  }}
-/>
-          <ActionCard
-            label="Select From Contacts"
-            icon="👥"
-            onClick={() => alert("Opening contacts...")}
-          />
+            <FormField
+              label="Data Plan"
+              type="select"
+              options={[
+                "Select Data Plan",
+                ...availablePlans.map(
+                  (p) => `${network.toUpperCase()} ${p.plan} - ₦${p.price} ${p.validity}`
+                ),
+              ]}
+              value={
+                dataPlan
+                  ? `${network.toUpperCase()} ${dataPlan.plan} - ₦${dataPlan.price} ${dataPlan.validity}`
+                  : ""
+              }
+              onChange={(e) => {
+                if (!e.target.value) return;
+                const selectedIndex = e.target.selectedIndex - 1;
+                setServiceID(availablePlans[selectedIndex].code);
+                setDataPlan(availablePlans[selectedIndex]);
+              }}
+            />
 
-          <FormField
-            label="Phone Number"
-            type="text"
-            placeholder="Enter phone number"
-            value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
-          />
+            <FormField
+              label="Phone Number"
+              type="text"
+              placeholder="Enter phone number"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+            />
 
-          <ActionCard
-            label="Network Status"
-            subtext="Check Before Purchase"
-            icon="📊"
-            onClick={() => alert("Checking network status...")}
-          />
-
-          {/* Buy Button */}
-          <div className="pt-2">
-            <button
-              onClick={()=>verifyName()}
-              disabled={loading || !network || !dataType}
-              className={`relative w-full py-4 overflow-hidden font-extrabold text-lg tracking-wide rounded-2xl
-                ${
-                  loading
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-gradient-to-r from-orange-600 via-red-500 to-yellow-500"
+            <ActionCard
+              label="Network Status"
+              subtext={phoneNumber ? `Detected: ${NETWORK_PREFIX_MAP[phoneNumber.slice(0,4)]?.toUpperCase() || "Unknown"}` : "Enter phone number to detect"}
+              icon="📊"
+              onClick={() => {
+                if (!phoneNumber) {
+                  alert("Enter a phone number first");
+                  return;
                 }
-                text-white
-                shadow-[0_0_25px_rgba(255,100,0,0.6)]
-                hover:shadow-[0_0_40px_rgba(255,150,50,0.9)]
-                transition-all duration-500 ease-out
-                hover:scale-[1.05] hover:-translate-y-1
-                before:absolute before:inset-0 
-                before:bg-gradient-to-r before:from-transparent before:via-white/30 before:to-transparent
-                before:translate-x-[-100%] hover:before:translate-x-[100%]
-                before:transition-transform before:duration-700 before:ease-in-out
-                active:scale-95 active:brightness-110`}
+                alert(`Detected Network: ${NETWORK_PREFIX_MAP[phoneNumber.slice(0,4)]?.toUpperCase() || "Unknown"}`);
+              }}
+            />
+
+            <button
+              onClick={openPinModal}
+              disabled={loading || !network || !dataType || !serviceID}
+              className={`relative w-full py-4 rounded-2xl font-bold text-white shadow-lg transition-all duration-300 ${
+                loading
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-gradient-to-r from-orange-600 via-red-500 to-yellow-500 hover:scale-105"
+              }`}
             >
               {loading ? (
                 <div className="flex items-center justify-center space-x-2">
@@ -275,26 +263,25 @@ const BuyDataForm = () => {
                   <span>Processing...</span>
                 </div>
               ) : (
-                <span className="relative z-10 flex items-center justify-center gap-2">
-                  ⚡ Buy Data
-                </span>
+                "⚡ Buy Data"
               )}
             </button>
           </div>
         </div>
+
+        <TransactionModal
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          transaction={transaction}
+        />
+        <PinModal
+          open={pinOpen}
+          onClose={() => setPinOpen(false)}
+          onSubmit={verifyPinAndPurchase}
+        />
+
+        <BottomNav />
       </div>
-      <TransactionModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        transaction={transaction}
-      />
-      <PinModal
-        open={pinOpen}
-        onClose={() => setPinOpen(false)}
-        onSubmit={verifyPinAndPurchase}
-/>
-      <BottomNav />
-    </div>
     </div>
   );
 };
