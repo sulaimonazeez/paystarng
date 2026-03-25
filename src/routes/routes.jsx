@@ -3,6 +3,7 @@ import Login from "../pages/login.jsx";
 import Dashboard from "../pages/dashboard.jsx";
 import UserProfile from "../pages/profile.jsx";
 import SupportSection from "../pages/support.jsx";
+import AutoBuyPage from "../pages/autoBuy.jsx";
 import TransactionHistory from "../pages/history.jsx";
 import BuyDataForm from "../pages/BuyDataForm.jsx";
 import Airtime from "../pages/airtime.jsx";
@@ -18,6 +19,9 @@ import Cable from "../pages/cable.jsx";
 import GalaxyContactPage from "../pages/contact.jsx";
 import { HelmetProvider } from "react-helmet-async";
 import UpdatePinPage from "../pages/pinUpdate.jsx";
+import NotificationsPage from "../pages/notifications.jsx";
+
+
 const MyRoute = () => {
   return (
     <HelmetProvider>
@@ -33,9 +37,11 @@ const MyRoute = () => {
         <Route path="/profile" element={<PrivateRoute element={<UserProfile />} allowedRoles={["user","admin"]} />} />
         <Route path="/support" element={<PrivateRoute element={<SupportSection />} allowedRoles={["user","admin"]} />} />
         <Route path="/history" element={<PrivateRoute element={<TransactionHistory />} allowedRoles={["user","admin"]} />} />
+        <Route path="/auto-schedule" element={<PrivateRoute element={<AutoBuyPage />} allowedRoles={["user","admin"]} />} />
         <Route path="/data" element={<PrivateRoute element={<BuyDataForm />} allowedRoles={["user","admin"]} />} />
         <Route path="/airtime" element={<PrivateRoute element={<Airtime />} allowedRoles={["user","admin"]} />} />
         <Route path="/account/generate" element={<PrivateRoute element={<AccountCard />} allowedRoles={["user","admin"]} />} />
+        <Route path="/notifications" element={<PrivateRoute element={<NotificationsPage />} allowedRoles={["user","admin"]} />} />
         <Route path="/paystack" element={<PrivateRoute element={<PaystackForm />} allowedRoles={["user","admin"]} />} />
         <Route path="/cable" element={<PrivateRoute element={<Cable />} allowedRoles={["user","admin"]} />} />
         <Route path="/pin/update" element={<PrivateRoute element={<UpdatePinPage />} allowedRoles={["user","admin"]} />} />

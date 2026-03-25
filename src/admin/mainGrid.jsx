@@ -1,63 +1,67 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { Eye, Plus, ChevronRight } from "lucide-react";
 
-const MainGrid = ({ databaseName }) => {
+const MainGrid = ({ databaseName, onAdd }) => {
   const navigate = useNavigate();
 
   return (
-    <div
-      className="
-        flex items-center justify-between 
-        px-4 py-3 
-        rounded-lg 
-        bg-black/40 
-        border border-white/10
-        shadow-md 
-        transition 
-        duration-300 
-        hover:bg-black/60 
-        hover:shadow-[0_0_18px_rgba(99,102,241,0.6)]
-        hover:-translate-y-1
-      "
-    >
-      {/* Left Title */}
-      <p
-        className="
-          text-indigo-400 
-          font-bold 
-          text-lg 
-          cursor-pointer 
-          hover:text-indigo-300 
-          transition
-        "
+    <div style={{
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+      gap: "0.75rem",
+    }}>
+      {/* Model name + view */}
+      <button
         onClick={() => navigate(`/admin/${databaseName}`)}
+        style={{
+          display: "flex", alignItems: "center", gap: "0.5rem",
+          background: "none", border: "none", cursor: "pointer", padding: 0,
+          flex: 1, textAlign: "left",
+        }}
       >
-        {databaseName}
-      </p>
+        <div style={{
+          width: 8, height: 8, borderRadius: "50%",
+          background: "linear-gradient(135deg,#6366f1,#8b5cf6)", flexShrink: 0,
+        }} />
+        <span style={{
+          fontWeight: 700, fontSize: "0.9rem", color: "#e2e8f0",
+          fontFamily: "'Plus Jakarta Sans',sans-serif",
+        }}>
+          {databaseName}
+        </span>
+        <ChevronRight size={14} style={{ color: "rgba(148,163,184,0.35)", marginLeft: "auto" }} />
+      </button>
 
-      {/* Right Actions */}
-      <div className="flex gap-6 text-sm font-semibold">
-        <p
-          className="
-            text-blue-400 
-            cursor-pointer 
-            hover:text-blue-300 
-            transition
-          "
+      {/* Actions */}
+      <div style={{ display: "flex", gap: "0.4rem", flexShrink: 0 }}>
+        <button
+          onClick={() => navigate(`/admin/${databaseName}`)}
+          style={{
+            display: "flex", alignItems: "center", gap: "0.3rem",
+            padding: "0.3rem 0.65rem", borderRadius: 6,
+            background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.25)",
+            color: "#a5b4fc", fontSize: "0.72rem", fontWeight: 600, cursor: "pointer",
+            transition: "all 0.15s",
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = "rgba(99,102,241,0.22)"}
+          onMouseLeave={e => e.currentTarget.style.background = "rgba(99,102,241,0.1)"}
         >
-          Add
-        </p>
-
-        <p
-          className="
-            text-green-400 
-            cursor-pointer 
-            hover:text-green-300 
-            transition
-          "
+          <Eye size={11} /> View
+        </button>
+        <button
+          onClick={() => onAdd ? onAdd(databaseName) : navigate(`/admin/${databaseName}`)}
+          style={{
+            display: "flex", alignItems: "center", gap: "0.3rem",
+            padding: "0.3rem 0.65rem", borderRadius: 6,
+            background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.25)",
+            color: "#34d399", fontSize: "0.72rem", fontWeight: 600, cursor: "pointer",
+            transition: "all 0.15s",
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = "rgba(16,185,129,0.22)"}
+          onMouseLeave={e => e.currentTarget.style.background = "rgba(16,185,129,0.1)"}
         >
-          Change
-        </p>
+          <Plus size={11} /> Add
+        </button>
       </div>
     </div>
   );

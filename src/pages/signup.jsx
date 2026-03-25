@@ -1,14 +1,9 @@
-import React, { useRef, useState, useEffect, useCallback, Suspense, lazy } from "react";
-import { motion } from "framer-motion";
-import { useNavigate, Link} from "react-router-dom";
+import React, { useRef, useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
-
-// Lazy-loaded components for performance
-const SEOHead = lazy(() => import("../components/ui/seo.jsx"));
-const UserIcon = lazy(() => import("lucide-react").then(mod => ({ default: mod.User })));
-const MailIcon = lazy(() => import("lucide-react").then(mod => ({ default: mod.Mail })));
-const PhoneIcon = lazy(() => import("lucide-react").then(mod => ({ default: mod.Phone })));
-const LockIcon = lazy(() => import("lucide-react").then(mod => ({ default: mod.Lock })));
+import { User, Mail, Phone, Lock, Eye, EyeOff, ArrowRight, CheckCircle2 } from "lucide-react";
+import SEOHead from "../components/ui/seo.jsx";
 
 const Signup = () => {
   const baseURL = import.meta.env.VITE_API_URL;
@@ -17,183 +12,209 @@ const Signup = () => {
 
   const [loading, setLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
 
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
+  const [firstName, setFirstName]   = useState("");
+  const [lastName, setLastName]     = useState("");
+  const [email, setEmail]           = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [password, setPassword] = useState("");
+  const [password, setPassword]     = useState("");
 
-  // ✅ Form submission with useCallback to prevent unnecessary re-renders
   const formSubmission = useCallback(async () => {
     try {
-      const response = await axios.post(`${baseURL}/create`, {
-        firstName,
-        lastName,
-        email,
-        phoneNumber,
-        password,
-      });
-
+      const response = await axios.post(`${baseURL}/create`, { firstName, lastName, email, phoneNumber, password });
       if (response.status === 200 || response.status === 201) {
-        alert("Signup successful!");
-        navigate("/login");
+        setSuccess(true);
+        setTimeout(() => navigate("/login"), 1800);
       }
     } catch (err) {
-      alert(err.response?.data?.message || err.message);
-    } finally {
-      setLoading(false);
-    }
+      setError(err.response?.data?.message || err.message || "Signup failed. Please try again.");
+    } finally { setLoading(false); }
   }, [firstName, lastName, email, phoneNumber, password, navigate, baseURL]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setError("");
     setLoading(true);
     formSubmission();
   };
 
-  // 🔁 Check if user already logged in
   useEffect(() => {
     if (hasRun.current) return;
     hasRun.current = true;
-
     const checkAuth = async () => {
       try {
         const res = await axios.get(`${baseURL}/api/check`, { withCredentials: true });
-        if (res.status === 200 && res.data.user) {
-          navigate("/app");
-        }
-      } catch {
-        console.log("Not authenticated, continue to signup");
-      } finally {
-        setCheckingAuth(false);
-      }
+        if (res.status === 200 && res.data.user) navigate("/app");
+      } catch {} finally { setCheckingAuth(false); }
     };
-
     checkAuth();
   }, [navigate, baseURL]);
 
-  if (checkingAuth) return null; // Prevent UI flash
+  if (checkingAuth) return null;
 
   return (
     <>
-      {/* Lazy load SEOHead for faster initial paint */}
-      <Suspense fallback={null}>
-        <SEOHead title="Create Account | PayStar" />
-      </Suspense>
+      <SEOHead title="Create Account — PayStar" />
 
-      <div className="relative flex items-center justify-center min-h-screen bg-gradient-to-br from-black via-blue-950 to-blue-900 overflow-hidden">
+      <div style={{ minHeight:"100vh", display:"flex", background:"var(--bg)", fontFamily:"var(--font-body)" }}>
 
-        {/* 🌌 Glowing orbs background */}
-        <div className="absolute inset-0 -z-10 overflow-hidden">
-          <div className="absolute top-10 left-10 w-72 h-72 bg-purple-500/20 rounded-full blur-3xl animate-pulse-slow"></div>
-          <div className="absolute bottom-20 right-20 w-96 h-96 bg-cyan-500/20 rounded-full blur-3xl animate-ping-slow"></div>
-          <div className="absolute top-1/3 right-1/4 w-48 h-48 bg-pink-600/20 rounded-full blur-2xl animate-bounce-slow"></div>
+        {/* ── Left decorative panel ── */}
+        <div style={{ display:"none", flex:"0 0 42%", background:"linear-gradient(150deg, var(--primary) 0%, #C2410C 100%)", position:"relative", overflow:"hidden" }}
+          className="signup-panel">
+          <div style={{ position:"absolute", top:"-10%", right:"-15%", width:300, height:300, background:"rgba(255,255,255,0.07)", borderRadius:"50%" }} />
+          <div style={{ position:"absolute", bottom:"-8%", left:"-10%", width:240, height:240, background:"rgba(255,255,255,0.05)", borderRadius:"50%" }} />
+          <div style={{ position:"absolute", top:"32%", left:"8%", right:"8%" }}>
+            <div style={{ fontSize:"2rem", fontWeight:800, color:"#fff", fontFamily:"var(--font-display)", lineHeight:1.25, marginBottom:"1rem" }}>
+              Join 500K+<br/>PayStar users
+            </div>
+            <p style={{ color:"rgba(255,255,255,0.75)", fontSize:"0.95rem", lineHeight:1.7 }}>
+              The easiest way to buy data, airtime, pay bills and more across Nigeria.
+            </p>
+            <div style={{ marginTop:"2rem", display:"flex", flexDirection:"column", gap:"0.75rem" }}>
+              {["Free to create an account", "Instant transactions, 24/7", "Earn on every referral"].map((t,i) => (
+                <div key={i} style={{ display:"flex", alignItems:"center", gap:"0.65rem" }}>
+                  <div style={{ width:22, height:22, borderRadius:"50%", background:"rgba(255,255,255,0.2)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"0.7rem", color:"#fff", fontWeight:700 }}>✓</div>
+                  <span style={{ color:"rgba(255,255,255,0.88)", fontSize:"0.88rem" }}>{t}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
-        {/* ✨ Signup Card */}
-        <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.8, type: "spring" }}
-          className="relative bg-white/5 backdrop-blur-2xl border border-white/20 rounded-3xl p-10 md:p-16 w-11/12 sm:w-96 shadow-[0_0_60px_rgba(124,58,237,0.4)] hover:shadow-[0_0_90px_rgba(124,58,237,0.6)] transition-all"
-        >
-          <h2 className="text-4xl font-extrabold text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 drop-shadow-lg">
-            Create Account 🔥
-          </h2>
-          <p className="text-gray-300 text-center mt-2 mb-8">
-            Join <span className="text-cyan-400 font-semibold">Paystar</span> and experience the future 💫
-          </p>
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* First Name */}
-            <Suspense fallback={null}>
-              <div className="relative">
-                <UserIcon className="absolute top-3 left-3 text-cyan-400 animate-pulse" size={20} />
-                <input
-                  type="text"
-                  aria-label="First Name"
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="First Name"
-                  className="w-full bg-transparent border border-white/30 rounded-xl pl-10 pr-3 py-3 text-white placeholder-gray-300 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50 outline-none transition"
-                  required
-                />
+        {/* ── Right: form ── */}
+        <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", padding:"2rem 1.5rem" }}>
+          <motion.div
+            initial={{ opacity:0, y:24 }}
+            animate={{ opacity:1, y:0 }}
+            transition={{ duration:0.45, ease:[0.22,1,0.36,1] }}
+            style={{ width:"100%", maxWidth:"420px" }}
+          >
+            {/* Brand */}
+            <div style={{ marginBottom:"1.75rem" }}>
+              <div style={{ display:"inline-flex", alignItems:"center", gap:"0.5rem", marginBottom:"1.25rem" }}>
+                <div style={{ width:36, height:36, background:"linear-gradient(135deg, var(--primary), var(--primary-dark))", borderRadius:"10px", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 4px 12px var(--primary-glow)" }}>
+                  <span style={{ color:"#fff", fontWeight:900, fontSize:"1rem", fontFamily:"var(--font-display)" }}>P</span>
+                </div>
+                <span style={{ fontFamily:"var(--font-display)", fontWeight:800, fontSize:"1.1rem", color:"var(--text)" }}>PayStar</span>
               </div>
+              <h1 style={{ fontFamily:"var(--font-display)", fontWeight:800, fontSize:"1.7rem", color:"var(--text)", margin:"0 0 0.3rem", letterSpacing:"-0.5px" }}>
+                Create your account 🚀
+              </h1>
+              <p style={{ color:"var(--text3)", fontSize:"0.88rem" }}>It's free and takes less than a minute</p>
+            </div>
 
-              {/* Last Name */}
-              <div className="relative">
-                <UserIcon className="absolute top-3 left-3 text-purple-400 animate-pulse-slow" size={20} />
-                <input
-                  type="text"
-                  aria-label="Last Name"
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Last Name"
-                  className="w-full bg-transparent border border-white/30 rounded-xl pl-10 pr-3 py-3 text-white placeholder-gray-300 focus:border-purple-400 focus:ring-2 focus:ring-purple-400/50 outline-none transition"
-                  required
-                />
+            {/* Success */}
+            <AnimatePresence>
+              {success && (
+                <motion.div initial={{ opacity:0, y:-6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
+                  style={{ background:"var(--success-bg)", border:"1.5px solid #BBF7D0", borderRadius:"var(--r)", padding:"0.75rem 1rem", marginBottom:"1.25rem", color:"var(--success)", fontSize:"0.85rem", display:"flex", alignItems:"center", gap:"0.5rem" }}>
+                  <CheckCircle2 size={16}/> Account created! Taking you to login...
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Error */}
+            <AnimatePresence>
+              {error && (
+                <motion.div initial={{ opacity:0, y:-6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
+                  style={{ background:"var(--error-bg)", border:"1.5px solid #FECACA", borderRadius:"var(--r)", padding:"0.75rem 1rem", marginBottom:"1.25rem", color:"var(--error)", fontSize:"0.85rem", display:"flex", alignItems:"center", gap:"0.5rem" }}>
+                  ⚠️ {error}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <form onSubmit={handleSubmit} style={{ display:"flex", flexDirection:"column", gap:"1rem" }}>
+
+              {/* First + Last name row */}
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0.75rem" }}>
+                <div>
+                  <label className="input-label">First Name</label>
+                  <div style={{ position:"relative" }}>
+                    <User size={15} style={{ position:"absolute", left:11, top:"50%", transform:"translateY(-50%)", color:"var(--text3)", pointerEvents:"none" }} />
+                    <input className="input" type="text" placeholder="Amara" required value={firstName} onChange={e=>setFirstName(e.target.value)} style={{ paddingLeft:34, fontSize:"0.88rem" }} />
+                  </div>
+                </div>
+                <div>
+                  <label className="input-label">Last Name</label>
+                  <div style={{ position:"relative" }}>
+                    <User size={15} style={{ position:"absolute", left:11, top:"50%", transform:"translateY(-50%)", color:"var(--text3)", pointerEvents:"none" }} />
+                    <input className="input" type="text" placeholder="Okafor" required value={lastName} onChange={e=>setLastName(e.target.value)} style={{ paddingLeft:34, fontSize:"0.88rem" }} />
+                  </div>
+                </div>
               </div>
 
               {/* Email */}
-              <div className="relative">
-                <MailIcon className="absolute top-3 left-3 text-cyan-400 animate-pulse" size={20} />
-                <input
-                  type="email"
-                  aria-label="Email Address"
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Email Address"
-                  className="w-full bg-transparent border border-white/30 rounded-xl pl-10 pr-3 py-3 text-white placeholder-gray-300 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50 outline-none transition"
-                  required
-                />
+              <div>
+                <label className="input-label">Email Address</label>
+                <div style={{ position:"relative" }}>
+                  <Mail size={16} style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", color:"var(--text3)", pointerEvents:"none" }} />
+                  <input className="input" type="email" autoComplete="email" placeholder="you@example.com" required value={email} onChange={e=>setEmail(e.target.value)} style={{ paddingLeft:38 }} />
+                </div>
               </div>
 
               {/* Phone */}
-              <div className="relative">
-                <PhoneIcon className="absolute top-3 left-3 text-purple-400 animate-pulse-slow" size={20} />
-                <input
-                  type="tel"
-                  aria-label="Phone Number"
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="Phone Number"
-                  className="w-full bg-transparent border border-white/30 rounded-xl pl-10 pr-3 py-3 text-white placeholder-gray-300 focus:border-purple-400 focus:ring-2 focus:ring-purple-400/50 outline-none transition"
-                  required
-                />
+              <div>
+                <label className="input-label">Phone Number</label>
+                <div style={{ position:"relative" }}>
+                  <Phone size={16} style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", color:"var(--text3)", pointerEvents:"none" }} />
+                  <input className="input" type="tel" placeholder="08012345678" required value={phoneNumber} onChange={e=>setPhoneNumber(e.target.value)} style={{ paddingLeft:38 }} />
+                </div>
               </div>
 
               {/* Password */}
-              <div className="relative">
-                <LockIcon className="absolute top-3 left-3 text-green-400 animate-pulse" size={20} />
-                <input
-                  type="password"
-                  aria-label="Password"
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Password"
-                  className="w-full bg-transparent border border-white/30 rounded-xl pl-10 pr-3 py-3 text-white placeholder-gray-300 focus:border-green-400 focus:ring-2 focus:ring-green-400/50 outline-none transition"
-                  required
-                />
+              <div>
+                <label className="input-label">Password</label>
+                <div style={{ position:"relative" }}>
+                  <Lock size={16} style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", color:"var(--text3)", pointerEvents:"none" }} />
+                  <input className="input" type={showPassword ? "text" : "password"} autoComplete="new-password" placeholder="Create a strong password" required value={password} onChange={e=>setPassword(e.target.value)} style={{ paddingLeft:38, paddingRight:42 }} />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)}
+                    style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", color:"var(--text3)", padding:0, display:"flex" }}>
+                    {showPassword ? <EyeOff size={16}/> : <Eye size={16}/>}
+                  </button>
+                </div>
               </div>
-            </Suspense>
 
-            {/* Signup Button */}
-            <motion.button
-              type="submit"
-              aria-label="Sign Up and create new account"
-              whileHover={{ scale: 1.05, boxShadow: "0 0 20px rgba(124,58,237,0.7)" }}
-              whileTap={{ scale: 0.95 }}
-              className="w-full py-3 bg-gradient-to-r from-purple-500 via-cyan-500 to-purple-600 rounded-xl text-white font-bold text-lg shadow-lg hover:shadow-purple-500/50 transition-all relative overflow-hidden"
-            >
-              {loading ? <span className="animate-pulse">Creating Account...</span> : "Sign Up"}
-              <span className="absolute top-0 left-0 w-full h-full bg-white/10 rounded-xl pointer-events-none animate-glow"></span>
-            </motion.button>
-          </form>
+              <p style={{ fontSize:"0.75rem", color:"var(--text3)", margin:"0.1rem 0" }}>
+                By signing up you agree to our <span style={{ color:"var(--primary)", fontWeight:600, cursor:"pointer" }}>Terms of Service</span> and <span style={{ color:"var(--primary)", fontWeight:600, cursor:"pointer" }}>Privacy Policy</span>.
+              </p>
 
-          <p className="text-center text-gray-400 mt-6 text-sm">
-            Already have an account?{" "}
-            <Link to="/login" className="text-cyan-400 hover:underline">
-              Login
+              <motion.button
+                type="submit" disabled={loading}
+                whileHover={!loading ? { translateY:-1 } : {}}
+                whileTap={!loading ? { scale:0.98 } : {}}
+                className="btn btn-primary btn-lg"
+                style={{ width:"100%", justifyContent:"center" }}
+              >
+                {loading
+                  ? <><span className="spinner"/> Creating Account...</>
+                  : <>Create Account <ArrowRight size={16}/></>
+                }
+              </motion.button>
+            </form>
+
+            <div style={{ display:"flex", alignItems:"center", gap:"0.75rem", margin:"1.4rem 0" }}>
+              <div style={{ flex:1, height:1, background:"var(--border)" }}/>
+              <span style={{ color:"var(--text3)", fontSize:"0.78rem" }}>Already have an account?</span>
+              <div style={{ flex:1, height:1, background:"var(--border)" }}/>
+            </div>
+
+            <Link to="/login" className="btn btn-ghost" style={{ width:"100%", justifyContent:"center" }}>
+              Sign In Instead
             </Link>
-          </p>
-        </motion.div>
+
+            <p style={{ textAlign:"center", color:"var(--text3)", fontSize:"0.72rem", marginTop:"1.5rem" }}>
+              🔒 Secured with 256-bit SSL encryption
+            </p>
+          </motion.div>
+        </div>
       </div>
+
+      <style>{`
+        @media (min-width: 768px) { .signup-panel { display: flex !important; } }
+      `}</style>
     </>
   );
 };

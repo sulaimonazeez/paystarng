@@ -1,155 +1,110 @@
-import React, { useContext, useState, useEffect, useMemo, lazy, Suspense } from "react";
+import React, { useState, useEffect, useContext, useMemo } from "react";
+import { ArrowLeft, User, Mail, Phone, MapPin, Calendar, ChevronRight, Shield, Bell, HelpCircle, LogOut, Edit2, Copy, CheckCircle2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { User, Mail, Phone, MapPin, Edit3, Calendar } from "lucide-react";
 import axiosInstance from "../api/utilities.jsx";
 import { AuthContext } from "../context/authContext.jsx";
 import SEOHead from "../components/ui/seo.jsx";
-import { useNavigate } from "react-router-dom";
+import { BottomNav } from "./dashboard.jsx";
 
-// Lazy load BottomNav
-const BottomNav = lazy(() => import("../components/ui/bottomNav.jsx"));
+const Skeleton = ({ className }) => <div className={`skeleton ${className}`} />;
 
 const UserProfile = () => {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { logout } = useContext(AuthContext);
+  const [data, setData]       = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [copied, setCopied]   = useState(false);
 
-  // Fetch profile
   useEffect(() => {
-    const fetchProfiles = async () => {
-      try {
-        const response = await axiosInstance.get("/api/profile");
-        if (response.status === 200 || response.status === 201) {
-          setData(response.data);
-        } else {
-          console.warn("Something went wrong fetching profile");
-        }
-      } catch (err) {
-        console.error("Error fetching profile:", err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProfiles();
+    axiosInstance.get("/api/profile").then(res => setData(res.data)).catch(console.error).finally(() => setLoading(false));
   }, []);
 
-  const updatePin = () => navigate("/pin/update");
+  const displayName = useMemo(() => loading ? "Loading..." : `${data?.firstname || ""} ${data?.lastname || ""}`.trim(), [loading, data]);
+  const initials    = useMemo(() => displayName.split(" ").map(w=>w[0]).slice(0,2).join("").toUpperCase(), [displayName]);
+  const joined      = useMemo(() => data?.createdAt ? new Date(data.createdAt).toLocaleDateString("en-NG",{month:"long",year:"numeric"}) : "—", [data]);
 
-  // Memoized values
-  const displayName = useMemo(
-    () => (loading ? "Loading..." : `${data?.firstname || ""} ${data?.lastname || ""}`),
-    [loading, data]
-  );
+  const copyId = () => {
+    navigator.clipboard.writeText(data?._id || "");
+    setCopied(true); setTimeout(() => setCopied(false), 2000);
+  };
 
-  const joinedDate = useMemo(
-    () => (loading ? "Loading..." : new Date(data?.createdAt).toLocaleDateString()),
-    [loading, data]
-  );
-
-  const userAvatar = useMemo(
-    () => data?.avatar || "https://i.pravatar.cc/300?img=68",
-    [data]
-  );
-
-  const infoItems = useMemo(() => [
-    { icon: <Mail size={18} />, label: "Email", value: loading ? "Loading..." : data?.email },
-    { icon: <Phone size={18} />, label: "Phone", value: loading ? "Loading..." : data?.phone },
-    { icon: <MapPin size={18} />, label: "Address", value: "Lagos, Nigeria" },
-    { icon: <Calendar size={18} />, label: "Joined", value: joinedDate },
-  ], [loading, data, joinedDate]);
+  const menuItems = [
+    { icon:<Shield size={18}/>,  label:"Security & PIN",  sub:"Update PIN, change password", action:() => navigate("/pin/update"), color:"text-blue-600",  bg:"bg-blue-50" },
+    { icon:<Bell size={18}/>,    label:"Notifications",   sub:"Manage your alerts",           action:() => {navigate("/notifications")}, color:"text-purple-600", bg:"bg-purple-50" },
+    { icon:<HelpCircle size={18}/>,label:"Support",       sub:"Get help from our team",       action:() => navigate("/support"), color:"text-green-600", bg:"bg-green-50" },
+  ];
 
   return (
-    <div>
-      <SEOHead title="Profile" />
-
-      <div className="mb-5 min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black p-6">
-        <motion.div
-          initial={{ opacity: 0, y: 60 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="w-full max-w-md bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl shadow-[0_0_20px_rgba(59,130,246,0.4)] relative overflow-hidden"
-        >
-          {/* Glowing Gradient Border */}
-          <motion.div
-            initial={{ rotate: 0 }}
-            animate={{ rotate: 360 }}
-            transition={{ repeat: Infinity, duration: 15, ease: "linear" }}
-            className="absolute -inset-[2px] bg-gradient-to-r from-orange-500 via-purple-500 to-pink-500 rounded-3xl blur-[8px] opacity-30"
-          />
-
-          <div className="relative z-10 p-2 text-white">
-            {/* Avatar */}
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.6 }}
-              className="flex flex-col items-center text-center"
-            >
-              <div className="relative">
-                <img
-                  src={userAvatar}
-                  alt={displayName}
-                  className="w-32 h-32 rounded-full border-4 border-white/30 shadow-lg object-cover"
-                />
-                <motion.div
-                  whileHover={{ scale: 1.1 }}
-                  className="absolute bottom-0 right-0 bg-blue-600 p-2 rounded-full shadow-md hover:bg-blue-500 transition"
-                >
-                  <Edit3 size={18} />
-                </motion.div>
-              </div>
-              <h1 className="text-2xl font-bold mt-4">{displayName}</h1>
-              <p className="text-sm text-gray-300">Premium Member ✨</p>
-            </motion.div>
-
-            {/* Info Section */}
-            <div className="mt-8 space-y-4">
-              {infoItems.map((item, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ x: -20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: 0.2 * index, duration: 0.5 }}
-                  className="flex items-center justify-between bg-white/10 border border-white/10 rounded-xl px-4 py-3 hover:bg-white/20 transition"
-                >
-                  <div className="flex items-center gap-3 text-gray-200">
-                    {item.icon}
-                    <span className="font-medium">{item.label}</span>
-                  </div>
-                  <p className="text-gray-300 text-sm">{item.value}</p>
-                </motion.div>
-              ))}
-            </div>
-
-            {/* Actions */}
-            <div className="mt-8 flex gap-4">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                onClick={updatePin}
-                whileTap={{ scale: 0.95 }}
-                className="flex-1 bg-orange-600 py-3 rounded-xl font-semibold hover:bg-orange-500 transition"
-              >
-                Update Pin
-              </motion.button>
-
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                onClick={logout}
-                whileTap={{ scale: 0.95 }}
-                className="flex-1 border border-white/30 py-3 rounded-xl font-semibold hover:bg-white/10 transition"
-              >
-                Logout
-              </motion.button>
-            </div>
-          </div>
-        </motion.div>
+    <div style={{ minHeight:"100vh", background:"var(--bg)", paddingBottom:80 }}>
+      <SEOHead title="Profile — PayStar" />
+      <div className="page-header">
+        <button onClick={() => navigate(-1)} style={{ background:"none", border:"none", cursor:"pointer", color:"var(--text2)", padding:4 }}><ArrowLeft size={20}/></button>
+        <p style={{ fontFamily:"var(--font-display)", fontWeight:700, fontSize:"1rem" }}>Profile</p>
       </div>
 
-      {/* Lazy-load BottomNav */}
-      <Suspense fallback={null}>
-        <BottomNav />
-      </Suspense>
+      <div style={{ maxWidth:480, margin:"0 auto", padding:"1.25rem" }}>
+        {/* Avatar + Name */}
+        <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} style={{ background:"var(--bg2)", border:"1px solid var(--border)", borderRadius:"var(--r-xl)", padding:"1.5rem", textAlign:"center", marginBottom:"1rem" }}>
+          <div style={{ position:"relative", display:"inline-block", marginBottom:"0.875rem" }}>
+            <div style={{ width:72, height:72, borderRadius:"50%", background:"linear-gradient(135deg,var(--primary),#C2410C)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--font-display)", fontWeight:800, fontSize:"1.5rem", color:"#fff", margin:"0 auto" }}>
+              {loading ? "?" : initials}
+            </div>
+            <div style={{ position:"absolute", bottom:0, right:0, width:24, height:24, background:"var(--primary)", borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", border:"2px solid var(--bg2)", cursor:"pointer" }}>
+              <Edit2 size={10} color="#fff"/>
+            </div>
+          </div>
+          {loading ? <Skeleton className="h-6 w-36 mx-auto mb-2"/> : <p style={{ fontFamily:"var(--font-display)", fontWeight:700, fontSize:"1.2rem", color:"var(--text)" }}>{displayName}</p>}
+          {loading ? <Skeleton className="h-4 w-24 mx-auto mb-3"/> : <p style={{ fontSize:"0.78rem", color:"var(--text3)", marginBottom:"0.875rem" }}>{data?.email}</p>}
+          <div style={{ display:"inline-flex", alignItems:"center", gap:"0.4rem", background:"var(--bg3)", borderRadius:100, padding:"0.3rem 0.875rem", cursor:"pointer" }} onClick={copyId}>
+            <span style={{ fontSize:"0.68rem", color:"var(--text3)", fontFamily:"monospace" }}>ID: {data?._id?.slice(-8) || "••••••••"}</span>
+            {copied ? <CheckCircle2 size={12} color="var(--success)"/> : <Copy size={12} color="var(--text3)"/>}
+          </div>
+        </motion.div>
+
+        {/* Info Cards */}
+        <div style={{ background:"var(--bg2)", border:"1px solid var(--border)", borderRadius:"var(--r-xl)", marginBottom:"1rem", overflow:"hidden" }}>
+          {[
+            { icon:<Mail size={16}/>,     label:"Email",   value: loading ? "Loading..." : data?.email },
+            { icon:<Phone size={16}/>,    label:"Phone",   value: loading ? "Loading..." : data?.phoneNumber },
+            { icon:<MapPin size={16}/>,   label:"Country", value:"Nigeria" },
+            { icon:<Calendar size={16}/>, label:"Member since", value: joined },
+          ].map((item, i, arr) => (
+            <div key={item.label} style={{ display:"flex", alignItems:"center", gap:"0.875rem", padding:"1rem 1.25rem", borderBottom: i < arr.length-1 ? "1px solid var(--border)" : "none" }}>
+              <div style={{ width:36, height:36, borderRadius:"var(--r-sm)", background:"var(--primary-dim)", display:"flex", alignItems:"center", justifyContent:"center", color:"var(--primary)", flexShrink:0 }}>
+                {item.icon}
+              </div>
+              <div style={{ flex:1 }}>
+                <p style={{ fontSize:"0.68rem", color:"var(--text3)", marginBottom:"0.1rem" }}>{item.label}</p>
+                {loading ? <Skeleton className="h-4 w-32"/> : <p style={{ fontSize:"0.88rem", fontWeight:500, color:"var(--text)" }}>{item.value || "—"}</p>}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Settings Menu */}
+        <div style={{ background:"var(--bg2)", border:"1px solid var(--border)", borderRadius:"var(--r-xl)", marginBottom:"1rem", overflow:"hidden" }}>
+          {menuItems.map((item, i, arr) => (
+            <button key={item.label} onClick={item.action} style={{ display:"flex", alignItems:"center", gap:"0.875rem", padding:"1rem 1.25rem", borderBottom: i < arr.length-1 ? "1px solid var(--border)" : "none", background:"none", border:"none", width:"100%", cursor:"pointer", textAlign:"left", transition:"background 0.15s" }}
+              onMouseEnter={e=>e.currentTarget.style.background="var(--bg3)"} onMouseLeave={e=>e.currentTarget.style.background="none"}>
+              <div className={`${item.bg} ${item.color}`} style={{ width:36, height:36, borderRadius:"var(--r-sm)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>{item.icon}</div>
+              <div style={{ flex:1 }}>
+                <p style={{ fontWeight:600, fontSize:"0.88rem", color:"var(--text)" }}>{item.label}</p>
+                <p style={{ fontSize:"0.72rem", color:"var(--text3)" }}>{item.sub}</p>
+              </div>
+              <ChevronRight size={16} color="var(--text3)"/>
+            </button>
+          ))}
+        </div>
+
+        {/* Logout */}
+        <button onClick={logout} style={{ width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:"0.5rem", padding:"0.875rem", background:"var(--error-bg)", border:"1px solid rgba(220,38,38,0.2)", borderRadius:"var(--r-lg)", color:"var(--error)", fontWeight:600, fontSize:"0.875rem", cursor:"pointer", transition:"all 0.2s", fontFamily:"var(--font-display)" }}
+          onMouseEnter={e=>{e.currentTarget.style.background="rgba(220,38,38,0.15)"}} onMouseLeave={e=>{e.currentTarget.style.background="var(--error-bg)"}}>
+          <LogOut size={16}/> Sign Out
+        </button>
+      </div>
+
+      <BottomNav active="profile" />
     </div>
   );
 };
