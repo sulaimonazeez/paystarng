@@ -24,8 +24,12 @@ const Login = () => {
     setLoading(true);
     setError("");
     try {
-      await axios.post(`${baseURL}/login`, { email, password }, { withCredentials: true });
+      // 🔥 FIXED: Path updated to include /api to match your backend server.js
+      await axios.post(`${baseURL}/api/login`, { email, password }, { withCredentials: true });
+      
+      // 🔥 FIXED: Path updated to include /api
       const check = await axios.get(`${baseURL}/api/check`, { withCredentials: true });
+      
       login(check.data.user);
       navigate("/app");
     } catch (err) {
@@ -38,12 +42,18 @@ const Login = () => {
     hasRun.current = true;
     const checkAuth = async () => {
       try {
+        // 🔥 FIXED: Path updated to include /api
         const res = await axios.get(`${baseURL}/api/check`, { withCredentials: true });
-        if (res.status === 200 && res.data.user) { login(res.data.user); navigate("/app"); }
-      } catch {} finally { setCheckingAuth(false); }
+        if (res.status === 200 && res.data.user) { 
+          login(res.data.user); 
+          navigate("/app"); 
+        }
+      } catch (err) {
+        // Silently fail if not authenticated
+      } finally { setCheckingAuth(false); }
     };
     checkAuth();
-  }, []);
+  }, [baseURL, login, navigate]);
 
   if (checkingAuth) return null;
 
