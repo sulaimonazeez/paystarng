@@ -4,46 +4,81 @@ import { Lock, Mail, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/authContext.jsx";
 import axios from "axios";
+import { setAuthToken, getAuthToken } from "../api/utilities.jsx";
 import SEOHead from "../components/ui/seo.jsx";
 
 const Login = () => {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading]         = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError]             = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail]             = useState("");
+  const [password, setPassword]       = useState("");
 
   const { login } = useContext(AuthContext);
-  const navigate = useNavigate();
-  const baseURL = import.meta.env.VITE_API_URL;
-  const hasRun = useRef(false);
+  const navigate  = useNavigate();
+  const baseURL   = import.meta.env.VITE_API_URL;
+  const hasRun    = useRef(false);
 
+  // ── On mount: if token already in localStorage, go straight to app ──
+  useEffect(() => {
+    if (hasRun.current) return;
+    hasRun.current = true;
+
+    const checkAuth = async () => {
+      const token = getAuthToken();
+      if (!token) { setCheckingAuth(false); return; }
+      try {
+        const res = await axios.get(`${baseURL}/api/check`, {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        });
+        if (res.status === 200 && res.data.user) {
+          login(res.data.user, token);
+          navigate("/app");
+          return;
+        }
+      } catch {
+        // Token stale — clear and show login form
+        setAuthToken(null);
+      }
+      setCheckingAuth(false);
+    };
+
+    checkAuth();
+  }, []);
+
+  // ── Submit ──
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
     try {
-      await axios.post(`${baseURL}/login`, { email, password }, { withCredentials: true });
-      const check = await axios.get(`${baseURL}/check`, { withCredentials: true });
-      login(check.data.user);
-      navigate("/app");
-    } catch (err) {
-      setError(err.response?.data?.message || "Login failed. Please try again.");
-    } finally { setLoading(false); }
-  };
+      // Step 1: Login — get token back in response body
+      const loginRes = await axios.post(
+        `${baseURL}/login`,
+        { email, password },
+        { withCredentials: true }
+      );
 
-  useEffect(() => {
-    if (hasRun.current) return;
-    hasRun.current = true;
-    const checkAuth = async () => {
-      try {
-        const res = await axios.get(`${baseURL}/api/check`, { withCredentials: true });
-        if (res.status === 200 && res.data.user) { login(res.data.user); navigate("/app"); }
-      } catch {} finally { setCheckingAuth(false); }
-    };
-    checkAuth();
-  }, []);
+      const token = loginRes.data?.token;
+      const user  = loginRes.data?.user;
+
+      if (!token) throw new Error("No token received from server");
+
+      // Step 2: Store token
+      setAuthToken(token);
+
+      // Step 3: Log user into React context (no extra /api/check call needed)
+      login(user, token);
+      navigate("/app");
+
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || "Login failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (checkingAuth) return null;
 
@@ -51,19 +86,11 @@ const Login = () => {
     <>
       <SEOHead title="Login — PayStar" />
 
-      {/* Full-page layout: image left, form right on desktop; form only on mobile */}
       <div style={{ minHeight: "100vh", display: "flex", background: "var(--bg)", fontFamily: "var(--font-body)" }}>
 
-        {/* ── Left decorative panel (hidden on mobile) ── */}
-        <div style={{
-          display: "none",
-          flex: "0 0 45%",
-          background: "linear-gradient(150deg, var(--primary) 0%, #C2410C 100%)",
-          position: "relative", overflow: "hidden",
-        }}
-          className="login-panel"
-        >
-          {/* circles */}
+        {/* Left decorative panel */}
+        <div style={{ display: "none", flex: "0 0 45%", background: "linear-gradient(150deg, var(--primary) 0%, #C2410C 100%)", position: "relative", overflow: "hidden" }}
+          className="login-panel">
           <div style={{ position:"absolute", top:"-10%", right:"-15%", width:320, height:320, background:"rgba(255,255,255,0.08)", borderRadius:"50%" }} />
           <div style={{ position:"absolute", bottom:"-8%", left:"-10%", width:260, height:260, background:"rgba(255,255,255,0.06)", borderRadius:"50%" }} />
           <div style={{ position:"absolute", top:"38%", left:"8%", right:"8%" }}>
@@ -84,7 +111,7 @@ const Login = () => {
           </div>
         </div>
 
-        {/* ── Right: form panel ── */}
+        {/* Right: form panel */}
         <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", padding:"2rem 1.5rem" }}>
           <motion.div
             initial={{ opacity:0, y:24 }}
@@ -92,7 +119,6 @@ const Login = () => {
             transition={{ duration:0.45, ease:[0.22,1,0.36,1] }}
             style={{ width:"100%", maxWidth:"400px" }}
           >
-            {/* Brand mark */}
             <div style={{ marginBottom:"2rem" }}>
               <div style={{ display:"inline-flex", alignItems:"center", gap:"0.5rem", marginBottom:"1.5rem" }}>
                 <div style={{ width:36, height:36, background:"linear-gradient(135deg, var(--primary), var(--primary-dark))", borderRadius:"10px", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 4px 12px var(--primary-glow)" }}>
@@ -106,7 +132,6 @@ const Login = () => {
               <p style={{ color:"var(--text3)", fontSize:"0.9rem" }}>Sign in to continue to your dashboard</p>
             </div>
 
-            {/* Error */}
             <AnimatePresence>
               {error && (
                 <motion.div initial={{ opacity:0, y:-6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
@@ -117,22 +142,15 @@ const Login = () => {
             </AnimatePresence>
 
             <form onSubmit={handleSubmit} style={{ display:"flex", flexDirection:"column", gap:"1.1rem" }}>
-
-              {/* Email */}
               <div>
                 <label className="input-label">Email Address</label>
                 <div style={{ position:"relative" }}>
                   <Mail size={16} style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", color:"var(--text3)", pointerEvents:"none" }} />
-                  <input
-                    className="input" type="email" autoComplete="email"
-                    placeholder="you@example.com" required
-                    value={email} onChange={e => setEmail(e.target.value)}
-                    style={{ paddingLeft: 38 }}
-                  />
+                  <input className="input" type="email" autoComplete="email" placeholder="you@example.com" required
+                    value={email} onChange={e => setEmail(e.target.value)} style={{ paddingLeft:38 }} />
                 </div>
               </div>
 
-              {/* Password */}
               <div>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"0.4rem" }}>
                   <label className="input-label" style={{ margin:0 }}>Password</label>
@@ -140,12 +158,9 @@ const Login = () => {
                 </div>
                 <div style={{ position:"relative" }}>
                   <Lock size={16} style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)", color:"var(--text3)", pointerEvents:"none" }} />
-                  <input
-                    className="input" type={showPassword ? "text" : "password"} autoComplete="current-password"
+                  <input className="input" type={showPassword ? "text" : "password"} autoComplete="current-password"
                     placeholder="Enter your password" required
-                    value={password} onChange={e => setPassword(e.target.value)}
-                    style={{ paddingLeft:38, paddingRight:42 }}
-                  />
+                    value={password} onChange={e => setPassword(e.target.value)} style={{ paddingLeft:38, paddingRight:42 }} />
                   <button type="button" onClick={() => setShowPassword(!showPassword)}
                     style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", color:"var(--text3)", padding:0, display:"flex" }}>
                     {showPassword ? <EyeOff size={16}/> : <Eye size={16}/>}
@@ -153,32 +168,20 @@ const Login = () => {
                 </div>
               </div>
 
-              {/* Submit */}
-              <motion.button
-                type="submit" disabled={loading}
-                whileHover={!loading ? { translateY:-1 } : {}}
-                whileTap={!loading ? { scale:0.98 } : {}}
-                className="btn btn-primary btn-lg"
-                style={{ width:"100%", justifyContent:"center", marginTop:"0.25rem" }}
-              >
-                {loading
-                  ? <><span className="spinner"/> Signing in...</>
-                  : <>Sign In <ArrowRight size={16}/></>
-                }
+              <motion.button type="submit" disabled={loading}
+                whileHover={!loading ? { translateY:-1 } : {}} whileTap={!loading ? { scale:0.98 } : {}}
+                className="btn btn-primary btn-lg" style={{ width:"100%", justifyContent:"center", marginTop:"0.25rem" }}>
+                {loading ? <><span className="spinner"/> Signing in...</> : <>Sign In <ArrowRight size={16}/></>}
               </motion.button>
             </form>
 
-            {/* Divider */}
             <div style={{ display:"flex", alignItems:"center", gap:"0.75rem", margin:"1.5rem 0" }}>
               <div style={{ flex:1, height:1, background:"var(--border)" }}/>
               <span style={{ color:"var(--text3)", fontSize:"0.78rem" }}>Don't have an account?</span>
               <div style={{ flex:1, height:1, background:"var(--border)" }}/>
             </div>
 
-            <Link to="/accounts/create"
-              className="btn btn-ghost"
-              style={{ width:"100%", justifyContent:"center" }}
-            >
+            <Link to="/accounts/create" className="btn btn-ghost" style={{ width:"100%", justifyContent:"center" }}>
               Create Free Account
             </Link>
 
@@ -189,9 +192,7 @@ const Login = () => {
         </div>
       </div>
 
-      <style>{`
-        @media (min-width: 768px) { .login-panel { display: flex !important; } }
-      `}</style>
+      <style>{`@media (min-width: 768px) { .login-panel { display: flex !important; } }`}</style>
     </>
   );
 };

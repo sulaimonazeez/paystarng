@@ -1,12 +1,5 @@
 {
   "rewrites": [
-    {
-      "source": "/b/:path*",
-      "destination": "https://paystarbackend.vercel.app*"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
