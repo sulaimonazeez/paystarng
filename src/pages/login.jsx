@@ -25,7 +25,7 @@ const Login = () => {
     setError("");
     try {
       await axios.post(`${baseURL}/login`, { email, password }, { withCredentials: true });
-      const check = await axios.get(`${baseURL}/api/check`, { withCredentials: true });
+      const check = await axios.get(`${baseURL}/check`, { withCredentials: true });
       login(check.data.user);
       navigate("/app");
     } catch (err) {
